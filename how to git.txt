@@ -1,0 +1,220 @@
+HOW TO USE GIT
+
+Alright. Now that you did the open-source release, I should teach you how to use Git.
+(Also, I kinda made it a bit modular, but not exactly since I am still not that good at this.)
+
+This is a practical guide for making changes without losing work. The short version is:
+
+	inspect -> branch -> edit -> review -> stage -> commit -> push -> pull request
+
+Git is local version history. GitHub hosts a copy of that history and adds collaboration features like pull requests. A commit is a saved snapshot; pushing sends your commits to GitHub. Editing a file does not automatically save it to Git history.
+
+STEP 1: CHECK WHAT IS GOING ON
+
+Run these before changing branches, staging, committing, or asking someone else to work in the repo:
+
+	git status --short --branch
+
+This shows your branch and working-tree changes. Common status markers:
+
+	M   a tracked file was modified
+	??  a file or directory is untracked (Git has never added it)
+	A   a new file is staged to be added
+	D   a tracked file was deleted
+
+To inspect changes:
+
+	git diff                 changes not staged yet
+	git diff --staged        changes staged for the next commit
+	git diff --stat          short summary of changed files
+	git log --oneline -10    ten recent commits
+
+The working tree is your current files. The staging area is the exact set of changes for the next commit. A commit is a permanent entry in your local history. Check all three deliberately.
+
+Important for this workspace: the current branch is main and it already has local changes, including new app files and this guide. Do not assume main is clean. Inspect status and choose files intentionally; do not blindly stage everything.
+
+STEP 2: MAKE A BRANCH FOR A CHANGE
+
+Keep main as the clean, shared baseline. Make one branch per feature, fix, or experiment:
+
+	git switch main
+	git pull --ff-only
+	git switch -c fix/short-description
+
+Examples:
+
+	git switch -c fix/login-button-state
+	git switch -c feature/app-pages
+	git switch -c docs/git-guide
+
+Use lowercase words separated by hyphens. Name the branch after the work, not the date or your mood.
+
+If you already made changes on main, creating a branch now usually keeps those changes in your working tree:
+
+	git switch -c docs/git-guide
+
+Check `git status` afterward. Do not switch to another existing branch if Git says your changes would be overwritten. First commit, stash, or otherwise safely preserve them.
+
+STEP 3: EDIT AND REVIEW
+
+Make a focused change. Then inspect it before saving it:
+
+	git status --short
+	git diff
+
+Ask:
+
+	- Did I change only what this task needs?
+	- Did I accidentally include unrelated edits?
+	- Did I add generated files, local settings, passwords, tokens, or private keys?
+	- Did I test the behavior I changed?
+
+Git does not know which edits were intentional. If another person or tool had already changed a file, read the current contents and preserve their changes.
+
+STEP 4: STAGE ONLY WHAT BELONGS
+
+Stage specific files by name:
+
+	git add path/to/file.js path/to/test.js
+
+To stage only selected parts of a file:
+
+	git add -p path/to/file.js
+
+Avoid `git add .` when you have not inspected the full worktree. It stages every eligible change under the current directory, including unrelated files and accidental secrets.
+
+Review the exact staged snapshot:
+
+	git status --short
+	git diff --staged
+
+If you staged a file by mistake, unstage it without deleting its edits:
+
+	git restore --staged path/to/file
+
+STEP 5: COMMIT A COMPLETE, SMALL CHANGE
+
+Commit messages should say what the change does. Start with a verb and keep it short:
+
+	git commit -m "Fix signed-out login button"
+	git commit -m "Add dedicated app pages"
+	git commit -m "Document Git workflow"
+
+A commit should be a coherent unit that can be understood on its own. It is fine to make several small commits. Do not commit half-finished work unless you deliberately want a work-in-progress commit.
+
+After committing:
+
+	git status --short --branch
+	git show --stat --oneline HEAD
+
+The commit is local at this point. GitHub has not received it yet.
+
+STEP 6: PUSH YOUR BRANCH
+
+Send your branch to the GitHub remote (usually named `origin`):
+
+	git push -u origin fix/short-description
+
+The `-u` sets the upstream so later pushes can use:
+
+	git push
+
+Likewise, after the upstream is set, `git pull --ff-only` can update the current branch when it can do so without creating a merge commit.
+
+STEP 7: OPEN A PULL REQUEST
+
+On GitHub, open a pull request from your branch into main. Explain:
+
+	- what changed
+	- why it changed
+	- how you tested it
+	- anything reviewers should pay attention to
+
+Review the PR diff as if someone else wrote it. Fix feedback with more commits on the same branch; the PR updates automatically when you push. Merge only when checks pass and the change is ready. After merging, update your local main and start the next change on a fresh branch.
+
+STEP 8: KEEP UP WITH MAIN
+
+Fetch checks for new remote history without changing your files:
+
+	git fetch origin
+
+To update a clean local main branch:
+
+	git switch main
+	git pull --ff-only
+
+Do not pull main into a branch with unrelated uncommitted edits. Commit or safely preserve your work first. `--ff-only` stops instead of silently creating a merge commit when Git cannot update cleanly.
+
+STEP 9: HANDLE A CONFLICT
+
+A conflict means two changes touched overlapping parts of a file. Git marks the file with sections like:
+
+	<<<<<<< HEAD
+	your version
+	=======
+	incoming version
+	>>>>>>> other-branch
+
+Open each conflicted file, decide what the final combined content should be, and remove all conflict markers. Then:
+
+	git status
+	git add path/to/resolved-file
+	git commit
+
+For a merge that you have not completed and want to abandon, `git merge --abort` usually returns to the pre-merge state. Check status first. Do not delete conflict files or accept one side blindly.
+
+STEP 10: UNDO CAREFULLY
+
+Unstage a file but keep its edits:
+
+	git restore --staged path/to/file
+
+Discard unstaged edits to one file (this permanently removes those edits):
+
+	git restore path/to/file
+
+Before discarding anything, inspect `git diff` and make a backup if there is any doubt. Never use that command on someone else's or an unknown change.
+
+Undo a commit that has already been pushed or shared by making a new inverse commit:
+
+	git revert COMMIT_ID
+
+For a commit ID, use `git log --oneline`. `git revert` preserves shared history. Avoid `git reset --hard`, `git clean -fd`, and `git push --force`: they can permanently discard work or rewrite history other people rely on. Ask before using them.
+
+STEP 11: RELEASE A VERSION
+
+For a release, first make sure the intended commits are merged to main and tests pass. Then create a version tag using the project's versioning scheme:
+
+	git switch main
+	git pull --ff-only
+	git tag -a v1.0.0 -m "Release v1.0.0"
+	git push origin v1.0.0
+
+Replace `v1.0.0` with the actual next version; do not reuse a published tag. On GitHub, create a Release from that tag and write release notes. A tag marks a precise commit; a GitHub Release adds the human-readable announcement and downloads.
+
+STEP 12: KEEP SECRETS OUT OF GIT
+
+Never commit passwords, access tokens, private keys, service-account files, or private user data. Put local-only files in `.gitignore`. If a secret is accidentally committed, deleting it in a later commit is not enough: rotate/revoke the secret, then follow the repository's incident process to remove it from history if needed.
+
+Before pushing new files, inspect them:
+
+	git status --short
+	git diff --staged --stat
+	git diff --staged
+
+QUICK WORKFLOW
+
+For a new task, this is the usual sequence:
+
+	git status --short --branch
+	git switch main
+	git pull --ff-only
+	git switch -c fix/short-description
+	# make and test the change
+	git diff
+	git add path/to/intentional-file
+	git diff --staged
+	git commit -m "Describe the change"
+	git push -u origin fix/short-description
+
+Then open a pull request on GitHub. If any command reports an unexpected conflict, dirty worktree, or rejected push, stop and read `git status` before trying to force your way through it. Git is safest when you inspect first and make one deliberate change at a time.
