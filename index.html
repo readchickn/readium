@@ -1184,6 +1184,8 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+    <h2>oct 21, 2026</h2>
+    <p><b>cookie clicker upgrades x9</b> — mega finger (+10/click), diamond finger (+25/click), plasma finger (+60/click), cookie factory (+25/sec), cookie mine (+100/sec), cookie portal (+500/sec), lucky charm (golden cookies show up twice as often and pay double), and two recipes that double ALL your production: butter recipe and secret recipe. happy clicking!</p>
     <h2>oct 18, 2026</h2>
     <p><b>mod helpers (MH)</b> — new helper tier below mods! helpers can delete messages and mute rule-breakers for up to an hour. helper names show in <i>italics</i>.</p>
     <p><b>apply to be a mod!</b> — new app where you can apply to become a mod helper. chickn reviews every application.</p>
@@ -7266,7 +7268,7 @@
   /* ---------- cookie clicker ---------- */
   var cookieClicks = 0;
   var cookieCookies = 0;
-  var cookieUps = { f1: 0, f2: 0, f3: 0, baker: 0, bakery: 0 };
+  var cookieUps = { f1: 0, f2: 0, f3: 0, f4: 0, f5: 0, f6: 0, baker: 0, bakery: 0, factory: 0, mine: 0, portal: 0, m1: 0, m2: 0, lucky: 0 };
   var cookieLastSync = 0;
   var cookieTickTimer = null;
   var cookieGoldenTimer = null;
@@ -7274,18 +7276,32 @@
     { id: "f1", name: "stronger finger", desc: "+1 per click", once: true, base: 100 },
     { id: "f2", name: "power finger", desc: "+2 per click", once: true, base: 500 },
     { id: "f3", name: "turbo finger", desc: "+5 per click", once: true, base: 2000 },
+    { id: "f4", name: "mega finger", desc: "+10 per click", once: true, base: 10000 },
+    { id: "f5", name: "diamond finger", desc: "+25 per click", once: true, base: 50000 },
+    { id: "f6", name: "plasma finger", desc: "+60 per click", once: true, base: 250000 },
     { id: "baker", name: "auto baker", desc: "+1 cookie/sec", base: 50 },
-    { id: "bakery", name: "bakery", desc: "+5 cookies/sec", base: 400 }
+    { id: "bakery", name: "bakery", desc: "+5 cookies/sec", base: 400 },
+    { id: "factory", name: "cookie factory", desc: "+25 cookies/sec", base: 3000 },
+    { id: "mine", name: "cookie mine", desc: "+100 cookies/sec", base: 15000 },
+    { id: "portal", name: "cookie portal", desc: "+500 cookies/sec", base: 100000 },
+    { id: "lucky", name: "lucky charm", desc: "golden cookies appear twice as often and pay double", once: true, base: 5000 },
+    { id: "m1", name: "butter recipe", desc: "ALL production x2 (clicks and per-sec)", once: true, base: 25000 },
+    { id: "m2", name: "secret recipe", desc: "ALL production x2 again", once: true, base: 500000 }
   ];
   function cookieUpCost(u) {
     if (u.once) { return u.base; }
     return Math.round(u.base * Math.pow(1.7, cookieUps[u.id] || 0));
   }
+  function cookieMult() {
+    return (cookieUps.m1 ? 2 : 1) * (cookieUps.m2 ? 2 : 1);
+  }
   function cookiePerClick() {
-    return 1 + (cookieUps.f1 ? 1 : 0) + (cookieUps.f2 ? 2 : 0) + (cookieUps.f3 ? 5 : 0);
+    var base = 1 + (cookieUps.f1 ? 1 : 0) + (cookieUps.f2 ? 2 : 0) + (cookieUps.f3 ? 5 : 0) + (cookieUps.f4 ? 10 : 0) + (cookieUps.f5 ? 25 : 0) + (cookieUps.f6 ? 60 : 0);
+    return base * cookieMult();
   }
   function cookiePerSec() {
-    return (cookieUps.baker || 0) * 1 + (cookieUps.bakery || 0) * 5;
+    var base = (cookieUps.baker || 0) * 1 + (cookieUps.bakery || 0) * 5 + (cookieUps.factory || 0) * 25 + (cookieUps.mine || 0) * 100 + (cookieUps.portal || 0) * 500;
+    return base * cookieMult();
   }
   function cookieLoad() {
     try { cookieClicks = parseInt(lsGet("readium_cookie_clicks") || "0", 10) || 0; } catch (e) { cookieClicks = 0; }
@@ -7367,7 +7383,8 @@
   }
   function cookieScheduleGolden() {
     if (cookieGoldenTimer) { clearTimeout(cookieGoldenTimer); }
-    // every 90-150 seconds
+    // every 90-150 seconds (45-75 with the lucky charm)
+    var delay = cookieUps.lucky ? (45000 + Math.random() * 30000) : (90000 + Math.random() * 60000);
     cookieGoldenTimer = setTimeout(function () {
       var gb = document.getElementById("golden-cookie");
       if (!gb) { return; }
@@ -7376,7 +7393,7 @@
         gb.className = "hidden";
         cookieScheduleGolden();
       }, 10000);
-    }, 90000 + Math.random() * 60000);
+    }, delay);
   }
   function cookieLoadBoard() {
     var box = document.getElementById("cookie-board");
@@ -7422,7 +7439,7 @@
   }
   document.getElementById("cookie-btn").onclick = function () { cookieDoClick(); };
   document.getElementById("golden-cookie").onclick = function () {
-    var bonus = 50 * cookiePerClick();
+    var bonus = (cookieUps.lucky ? 100 : 50) * cookiePerClick();
     cookieCookies += bonus;
     cookieSave();
     cookieRender();
