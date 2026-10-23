@@ -15,6 +15,27 @@
   body.dark h1, body.dark h2 { color: #eeeeee; }
   body.dark a { color: #88bbff; }
   body.dark .sug-done-text { text-decoration: line-through; opacity: 0.6; }
+  /* dark mode fixes: white cards/panels and light patterns keep dark text,
+     otherwise body.dark's near-white text lands on near-white backgrounds */
+  body.dark .board-row { border-bottom-color: #444444; }
+  body.dark .board-row.me { background: #333333; }
+  body.dark #profile-card, body.dark #signin-card, body.dark #confirm-card, body.dark #help-box, body.dark #online-panel { color: #111111; }
+  body.dark #profile-card h1, body.dark #profile-card h2, body.dark #signin-card h1, body.dark #signin-card h2, body.dark #confirm-card h1, body.dark #confirm-card h2, body.dark #help-box h1, body.dark #help-box h2 { color: #111111; }
+  body.dark #profile-card a, body.dark #signin-card a, body.dark #confirm-card a, body.dark #help-box a, body.dark #online-panel a { color: #0645ad; }
+  body.dark #signin-card input, body.dark #signin-card textarea, body.dark #confirm-card input, body.dark #confirm-card textarea { background: #ffffff; color: #111111; border-color: #111111; }
+  body.dark .ptheme-stripes { color: #111111; }
+  body.dark .ptheme-stripes h1, body.dark .ptheme-stripes h2, body.dark .ptheme-stripes p { color: #111111; }
+  body.dark .space-default { color: #111111; }
+  body.dark #space-inner.space-default h1, body.dark #space-inner.space-default h2, body.dark #space-inner.space-sunset h1, body.dark #space-inner.space-sunset h2 { color: #111111; }
+  body.dark .space-default a { color: #0645ad; }
+  body.dark #space-inner { border-color: #eeeeee; }
+  body.dark .space-border-dotted, body.dark .space-border-dashed, body.dark .space-border-double, body.dark .space-border-thick, body.dark .space-border-round { border-color: #eeeeee !important; }
+  body.dark .decor-pick { background: #222222; border-color: #eeeeee; }
+  body.dark .decor-pick.sel { background: #665511; outline-color: #eeeeee; }
+  body.dark .border-pick { background: #222222; }
+  body.dark .border-pick.sel, body.dark .theme-swatch.sel, body.dark .pet-pick.sel { outline-color: #eeeeee; }
+  body.dark .theme-swatch, body.dark .pet-pick { border-color: #eeeeee; }
+  body.dark .pet-pick { background: #222222; }
   /* colorsoft mode: soft muted colors for Kindle Colorsoft color e-ink */
   body.colorsoft { background: #fdf8ec; color: #2e3a3a; }
   body.colorsoft input, body.colorsoft textarea, body.colorsoft select { background: #ffffff; color: #2e3a3a; border-color: #b9c8c0; }
@@ -412,7 +433,7 @@
   .space-default { background: #ffffff !important; }
   .space-starry { background-color: #0a0a2e !important; background-image: radial-gradient(#ffffff 1.2px, transparent 1.2px), radial-gradient(#ccccff 1px, transparent 1px) !important; background-size: 42px 42px, 26px 26px !important; background-position: 0 0, 13px 19px !important; color: #ffffff !important; }
   .space-ocean { background: linear-gradient(#2a9fd8, #0a3a5c) !important; color: #ffffff !important; }
-  .space-sunset { background: linear-gradient(#ffb35c, #ff5e78) !important; }
+  .space-sunset { background: linear-gradient(#ffb35c, #ff5e78) !important; color: #111111; }
   #space-inner { border: 2px solid #111; margin: 8px 0; }
   .space-border-dotted { border: 4px dotted #111 !important; }
   .space-border-dashed { border: 4px dashed #111 !important; }
@@ -1626,6 +1647,7 @@
      e.g. "bass" does not become "bas" and strip the "bas" out of "bastard"/"dumbass". */
   var SAFE_WORDS = ["password","classic","class","pass","grass","mass","bass","assist","asset","document","cucumber","title","peacock","scunthorpe","shitake","cocktail",
     "analyze","analysis","analogy","banal","canal",
+    "analyzing","analyzed","analyzes","analyse","analysing","analyses","analyst","analysts","analogies",
     "grape","scrape","drape","trapeze",
     "torpedo","pedometer","speedometer","spedomter",
     "spice","spicy","auspicious","despicable","conspicuous",
@@ -1636,19 +1658,38 @@
   function fuzzyShortRe(norm) {
     return new RegExp("(^|[^a-z])" + norm.split("").join("[^a-z]*") + "([^a-z]|$)");
   }
+  /* innocent standalone words whose collapsed form equals a short banned word
+     ("ass"->"as", "kkk"->"k", "boob"->"bob", "coon"->"con"). they are blanked
+     out of the RAW text before the fuzzy check, so only their plain spelling
+     is excused: leet ("a55", "b00b", "c00n") and spaced ("a s s") versions
+     never appear as plain words in the raw text and are still caught.
+     3+ standalone k's in a row ("k k k") are NOT excused. */
+  function fuzzyLight(s) {
+    var raw = String(s).toLowerCase();
+    var toks = raw.split(/[^a-z]+/);
+    var kCount = 0;
+    for (var i = 0; i < toks.length; i++) {
+      if (toks[i] === "k") { kCount++; }
+      else if (toks[i] === "kk") { kCount += 2; }
+    }
+    var re = (kCount >= 3) ? /\b(as|bob|con)\b/g : /\b(as|kk|k|bob|con)\b/g;
+    return lightNorm(raw.replace(re, " "));
+  }
   function filterHit(s) {
     var light = lightNorm(s);
     var n = light.replace(/[^a-z]/g, "");
     for (var i = 0; i < SAFE_NORM.length; i++) {
       if (SAFE_NORM[i]) { n = n.split(SAFE_NORM[i]).join(""); }
     }
+    var fl = null;
     for (var j = 0; j < BANNED_NORM.length; j++) {
       var b = BANNED_NORM[j];
       if (!b) { continue; }
       if (b.length >= 4) {
         if (n.indexOf(b) !== -1) { return true; }
       } else {
-        if (fuzzyShortRe(b).test(light)) { return true; }
+        if (fl === null) { fl = fuzzyLight(s); }
+        if (fuzzyShortRe(b).test(fl)) { return true; }
       }
     }
     return false;
@@ -4133,11 +4174,11 @@
     if (b32) { b32.textContent = s === 32 ? "32x32 \u2713" : "32x32"; }
   }
   function getPoxelGallery() {
-    try { return JSON.parse(localStorage.getItem("poxel_gallery") || "[]"); }
+    try { return JSON.parse(lsGet("poxel_gallery") || "[]"); }
     catch (e) { return []; }
   }
   function savePoxelGallery(g) {
-    try { localStorage.setItem("poxel_gallery", JSON.stringify(g)); } catch (e) {}
+    try { lsSet("poxel_gallery", JSON.stringify(g)); } catch (e) {}
   }
   function poxelScaleTo16(data, fromSize) {
     var out = "";
@@ -5506,10 +5547,10 @@
     document.getElementById("flip-size-16").textContent = s === 16 ? "16x16 \u2713" : "16x16";
   }
   function getFlipGallery() {
-    try { return JSON.parse(localStorage.getItem("flipbook_gallery") || "[]"); } catch (e) { return []; }
+    try { return JSON.parse(lsGet("flipbook_gallery") || "[]"); } catch (e) { return []; }
   }
   function saveFlipGallery(g) {
-    try { localStorage.setItem("flipbook_gallery", JSON.stringify(g)); } catch (e) {}
+    try { lsSet("flipbook_gallery", JSON.stringify(g)); } catch (e) {}
   }
   function renderFlipGallery() {
     var box = document.getElementById("flip-gallery");
@@ -9716,7 +9757,7 @@ function flairName(name, rec) {
   function rpick(arr) { return arr[ri(arr.length - 1)]; }
   function rchance(p) { return Math.random() < p; }
   function fmtMoney(n) {
-    n = Math.round(n);
+    n = Math.round(Number(n) || 0); // never print $NaN, even from a corrupt save
     var neg = n < 0;
     var s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return (neg ? "-$" : "$") + s;
@@ -9772,9 +9813,9 @@ function flairName(name, rec) {
     return p;
   }
   function lifeNetWorth() {
-    var n = life.money;
-    for (var i = 0; i < life.assets.length; i++) { n += life.assets[i].value; }
-    n -= life.loans;
+    var n = Number(life.money) || 0;
+    for (var i = 0; i < life.assets.length; i++) { n += Number(life.assets[i].value) || 0; }
+    n -= Number(life.loans) || 0;
     return Math.round(n);
   }
   function lifeGenParents(l) {
@@ -13893,11 +13934,11 @@ function flairName(name, rec) {
   var chatbotMemory = { name: null, favGame: null, asked: {} };
   /* ---------- custom user notifications ---------- */
   function getNotifyRules() {
-    try { return JSON.parse(localStorage.getItem("readium_notify_rules") || "[]"); }
+    try { return JSON.parse(lsGet("readium_notify_rules") || "[]"); }
     catch (e) { return []; }
   }
   function saveNotifyRules(rules) {
-    try { localStorage.setItem("readium_notify_rules", JSON.stringify(rules)); } catch (e) {}
+    try { lsSet("readium_notify_rules", JSON.stringify(rules)); } catch (e) {}
   }
   var notifyWatchers = {};
   function startNotifyWatchers() {
