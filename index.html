@@ -1208,6 +1208,8 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+    <h2>oct 25, 2026</h2>
+    <p><b>event countdown moved to halloween</b> — the october event countdown now counts down to halloween at 12am instead of nov 8. doors and candy still run until nov 8.</p>
     <h2>oct 24, 2026</h2>
     <p><b>chess refresh</b> — clearer board with rank/file coordinates on the edges, better contrast squares, a gold highlight for the selected piece, a red ring for captures, and a real red check warning (it used to be grey and easy to miss). pieces also got a soft shadow so they stand out more. same game, just easier on the eyes.</p>
     <p><b>life sim ribbons on the title screen</b> — the ribbons tab already showed your collected vs not-collected ribbons during a life, but now there's a ribbons button on the life sim title screen too, so you can check your collection before starting a new life.</p>
@@ -14598,6 +14600,7 @@ function flairName(name, rec) {
   document.getElementById("suggest-home-btn").onclick = goHome;
   /* ================= OCTOBER EVENT ================= */
   var EVENT_END = new Date(2026, 10, 8, 0, 0, 0).getTime(); /* midnight ending Nov 7 */
+  var EVENT_COUNTDOWN_END = new Date(2026, 9, 31, 0, 0, 0).getTime(); /* Halloween midnight — countdown target only, doors still run to EVENT_END */
   var EVENT_DOOR_WINDOW = 2 * 3600 * 1000; /* 2 hours */
   var EVENT_DOOR_MAX = 6;
   var EVENT_TEAMS = ["pumpkin", "blackcat", "ghost", "bat"];
@@ -14689,7 +14692,7 @@ function flairName(name, rec) {
     stopEventCountdown();
     var el = document.getElementById("event-countdown");
     function tick() {
-      if (el) { el.textContent = fmtEventCountdown(EVENT_END - Date.now()); }
+      if (el) { el.textContent = fmtEventCountdown(EVENT_COUNTDOWN_END - Date.now()); }
     }
     tick();
     eventCountdownTimer = setInterval(tick, 1000);
