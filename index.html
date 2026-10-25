@@ -1209,6 +1209,7 @@
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
     <h2>oct 25, 2026</h2>
+    <p><b>critter catch: heal + team management</b> — new "heal all" button on the critter screen restores your whole team to full hp. every team member now has a "release" button (asks first, and the critter stays in your collection), and every collection critter has an "add to team" button, so you can swap your party around. also fixed: fainting from a failed trap or a failed run now switches to your next critter (or sends you home to recover) instead of leaving the battle stuck.</p>
     <p><b>mod helper applications fixed</b> — the applications list in the mod dashboard was stuck on "loading..." forever because the rules didn't allow listing them. fixed the rules and the app: new applications now register in your own list too, and old ones get picked up the first time you open the dashboard.</p>
     <p><b>dm dots that actually stick</b> — the red dot next to each unread dm used to only show for messages that arrived while you were already on the site. now every dm tracks what you've read, so dots show for messages that came in while you were away too, and clear when you open that dm.</p>
     <p><b>event countdown moved to halloween</b> — the october event countdown now counts down to halloween at 12am instead of nov 8. doors and candy still run until nov 8.</p>
@@ -13184,6 +13185,44 @@ function flairName(name, rec) {
     b.log = (b.log || []).concat([pvpMySide(b).name + " forfeited!"]);
     pvpWrite(b);
   };
+  function critterHealAll() {
+    critterSave.team.forEach(function (c) { c.hp = c.maxHp; });
+    critterStore();
+    critterBackup();
+    flashNotice("all healed!");
+    critterRender();
+  }
+  function critterRenderCollection(box) {
+    if (!critterSave.box.length) { return; }
+    var boxH = document.createElement("h2");
+    boxH.textContent = "collection (" + critterSave.box.length + "/" + CRITTERS.length + ")";
+    box.appendChild(boxH);
+    critterSave.box.forEach(function (c, idx) {
+      var row = document.createElement("div");
+      var p = document.createElement("p");
+      p.style.display = "inline";
+      p.textContent = c.name + " (" + c.type + ") Lv" + c.lvl + " — HP " + c.hp + "/" + c.maxHp + " ";
+      row.appendChild(p);
+      if (critterSave.team.length < 6) {
+        var add = document.createElement("button");
+        add.className = "mini secondary";
+        add.textContent = "add to team";
+        add.onclick = (function (i) {
+          return function () {
+            var copy = {};
+            var src = critterSave.box[i];
+            for (var k in src) { copy[k] = src[k]; }
+            critterSave.team.push(copy);
+            critterStore();
+            critterBackup();
+            critterRender();
+          };
+        })(idx);
+        row.appendChild(add);
+      }
+      box.appendChild(row);
+    });
+  }
   function critterRender() {
     var box = document.getElementById("critter-main");
     box.innerHTML = "";
@@ -13206,6 +13245,12 @@ function flairName(name, rec) {
         };
         box.appendChild(b);
       });
+      if (critterSave.box.length) {
+        var note = document.createElement("p");
+        note.textContent = "or add one back from your collection:";
+        box.appendChild(note);
+        critterRenderCollection(box);
+      }
       return;
     }
     // main menu
@@ -13216,25 +13261,37 @@ function flairName(name, rec) {
     ex.textContent = "explore!";
     ex.onclick = critterExplore;
     box.appendChild(ex);
+    var heal = document.createElement("button");
+    heal.className = "secondary";
+    heal.textContent = "heal all";
+    heal.onclick = critterHealAll;
+    box.appendChild(heal);
     var teamH = document.createElement("h2");
     teamH.textContent = "your team";
     box.appendChild(teamH);
-    critterSave.team.forEach(function (c) {
+    critterSave.team.forEach(function (c, idx) {
+      var row = document.createElement("div");
       var p = document.createElement("p");
-      p.textContent = c.name + " (" + c.type + ") Lv" + c.lvl + " — HP " + c.hp + "/" + c.maxHp;
-      box.appendChild(p);
+      p.style.display = "inline";
+      p.textContent = c.name + " (" + c.type + ") Lv" + c.lvl + " — HP " + c.hp + "/" + c.maxHp + " ";
+      row.appendChild(p);
+      var rel = document.createElement("button");
+      rel.className = "mini secondary";
+      rel.textContent = "release";
+      rel.onclick = (function (i, cc) {
+        return function () {
+          askConfirm("release " + cc.name + " from your team? it'll stay in your collection.", function () {
+            critterSave.team.splice(i, 1);
+            critterStore();
+            critterBackup();
+            critterRender();
+          });
+        };
+      })(idx, c);
+      row.appendChild(rel);
+      box.appendChild(row);
     });
-    if (critterSave.box.length) {
-      var boxH = document.createElement("h2");
-      boxH.textContent = "collection (" + critterSave.box.length + "/" + CRITTERS.length + ")";
-      box.appendChild(boxH);
-      var seen = {};
-      critterSave.box.forEach(function (c) { seen[c.id] = true; });
-      var p2 = document.createElement("p");
-      p2.style.fontSize = "15px";
-      p2.textContent = Object.keys(seen).map(function (id) { return critterById(id).name; }).join(", ");
-      box.appendChild(p2);
-    }
+    critterRenderCollection(box);
   }
   function critterExplore() {
     // guard: all fainted but never wiped (ran away) — recover a little instead of battling with a fainted critter
@@ -13467,6 +13524,23 @@ function flairName(name, rec) {
       b.msg += " it dealt " + wdam + " damage!" + (weff2 < 1 ? " resisted..." : "");
       if (mine.hp <= 0) {
         b.msg += " " + mine.name + " fainted!";
+        var next = -1;
+        for (var i = 0; i < critterSave.team.length; i++) {
+          if (critterSave.team[i].hp > 0) { next = i; break; }
+        }
+        if (next === -1) {
+          b.over = true;
+          b.msg += " all your critters fainted... you run home!";
+          setTimeout(function () {
+            critterSave.team.forEach(function (c) { c.hp = Math.round(c.maxHp / 4); });
+            critterStore();
+            critterBattle = null;
+            critterRender();
+          }, 1500);
+        } else {
+          b.myIdx = next;
+          b.msg += " go, " + critterSave.team[next].name + "!";
+        }
       }
     }
     critterStore();
@@ -13484,6 +13558,26 @@ function flairName(name, rec) {
       var wdam = Math.round(b.wild.atk + Math.random() * 5);
       mine.hp = Math.max(0, mine.hp - wdam);
       b.msg += " wild " + b.wild.name + " dealt " + wdam + "!";
+      if (mine.hp <= 0) {
+        b.msg += " " + mine.name + " fainted!";
+        var next = -1;
+        for (var i = 0; i < critterSave.team.length; i++) {
+          if (critterSave.team[i].hp > 0) { next = i; break; }
+        }
+        if (next === -1) {
+          b.over = true;
+          b.msg += " all your critters fainted... you run home!";
+          setTimeout(function () {
+            critterSave.team.forEach(function (c) { c.hp = Math.round(c.maxHp / 4); });
+            critterStore();
+            critterBattle = null;
+            critterRender();
+          }, 1500);
+        } else {
+          b.myIdx = next;
+          b.msg += " go, " + critterSave.team[next].name + "!";
+        }
+      }
     }
     critterStore();
     critterRender();
