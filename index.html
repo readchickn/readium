@@ -1209,6 +1209,8 @@
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
     <h2>oct 25, 2026</h2>
+    <p><b>mod helper applications fixed</b> — the applications list in the mod dashboard was stuck on "loading..." forever because the rules didn't allow listing them. fixed the rules and the app: new applications now register in your own list too, and old ones get picked up the first time you open the dashboard.</p>
+    <p><b>dm dots that actually stick</b> — the red dot next to each unread dm used to only show for messages that arrived while you were already on the site. now every dm tracks what you've read, so dots show for messages that came in while you were away too, and clear when you open that dm.</p>
     <p><b>event countdown moved to halloween</b> — the october event countdown now counts down to halloween at 12am instead of nov 8. doors and candy still run until nov 8.</p>
     <h2>oct 24, 2026</h2>
     <p><b>chess refresh</b> — clearer board with rank/file coordinates on the edges, better contrast squares, a gold highlight for the selected piece, a red ring for captures, and a real red check warning (it used to be grey and easy to miss). pieces also got a soft shadow so they stand out more. same game, just easier on the eyes.</p>
@@ -1585,6 +1587,7 @@
   var dmConvosRef = null;
   var dmMsgWatch = {};
   var dmUnread = {};
+  var dmOpenedAt = 0;
   var lastDmConvoData = null;
   var mentionRef = null;
   var pinsRef = null;
@@ -2990,6 +2993,15 @@
     dmConvosRef.on("value", function (snap) {
       var data = snap.val() || {};
       var others = Object.keys(data);
+      var persistU = false;
+      for (var pi = 0; pi < others.length; pi++) {
+        var pc = data[others[pi]] || {};
+        if (pc.lastFrom && pc.lastFrom !== uid && (!pc.readAt || (pc.lastAt || 0) > pc.readAt)) { persistU = true; break; }
+      }
+      var sessU = false;
+      for (var sk in dmUnread) { if (dmUnread.hasOwnProperty(sk)) { sessU = true; break; } }
+      dmMsgHas = persistU || sessU;
+      updateMsgsDot();
       for (var i = 0; i < others.length; i++) {
         (function (otherUid) {
           var c = data[otherUid] || {};
@@ -3123,7 +3135,9 @@
         var c = data[otherUid] || {};
         var b = document.createElement("button");
         b.className = "room-btn secondary";
-        if (c.dmId && dmUnread[c.dmId]) {
+        var me = myUid();
+        var hasUnread = c.dmId && (dmUnread[c.dmId] || (c.lastFrom && c.lastFrom !== me && (!c.readAt || (c.lastAt || 0) > c.readAt)));
+        if (hasUnread) {
           var dot = document.createElement("span");
           dot.textContent = "\u25CF ";
           dot.style.color = "#e74c3c";
@@ -3212,9 +3226,27 @@
     });
   }
 
+  /* per-DM read tracking: dmId is "uidA_uidB" (sorted), so the other side is derivable */
+  function dmOtherUid(dmId) {
+    var me = myUid();
+    if (!dmId || !me) { return null; }
+    var parts = dmId.split("_");
+    if (parts.length !== 2) { return null; }
+    if (parts[0] === me) { return parts[1]; }
+    if (parts[1] === me) { return parts[0]; }
+    return null;
+  }
+  function markDmRead(dmId) {
+    var me = myUid();
+    var other = dmOtherUid(dmId);
+    if (!me || !other) { return; }
+    db.ref("userDms/" + me + "/" + other).update({ readAt: Date.now() });
+  }
+
   function openDm(dmId, otherName) {
     if (dmReqListRef) { dmReqListRef.off(); dmReqListRef = null; }
     if (dmConvoRef) { dmConvoRef.off(); dmConvoRef = null; }
+    if (dmId) { markDmRead(dmId); }
     if (dmId && dmUnread[dmId]) {
       delete dmUnread[dmId];
       refreshDmDots();
@@ -6146,6 +6178,7 @@
     document.getElementById("latest-btn").className = "mini secondary hidden";
     document.getElementById("chat-title").textContent = title;
     currentRefPath = refPath;
+    dmOpenedAt = Date.now();
     // show report button only for DMs
     var isDmChat = refPath.indexOf("dms/") === 0;
     document.getElementById("dm-report-btn").className = isDmChat ? "mini secondary" : "mini secondary hidden";
@@ -6174,7 +6207,11 @@
       box.innerHTML = "";
       messagesRef = db.ref(refPath);
       messagesRef.limitToLast(50).on("child_added", function (s2) {
-        renderMessage(s2.key, s2.val() || {});
+        var mv = s2.val() || {};
+        renderMessage(s2.key, mv);
+        if (isDmChat && mv.uid && mv.uid !== myUid() && mv.ts && mv.ts > dmOpenedAt) {
+          markDmRead(refPath.split("/")[1]);
+        }
       });
       messagesRef.on("child_changed", function (s2) {
         updateReactions(s2.key, (s2.val() || {}).reactions);
@@ -6602,6 +6639,14 @@
         if (err) { alert("Send failed: " + (err.code || err.message || err)); }
         else { grantXp(1, "msg", 60000); }
       });
+      if (currentRefPath && currentRefPath.indexOf("dms/") === 0) {
+        var dmId2 = currentRefPath.split("/")[1];
+        var other2 = dmOtherUid(dmId2);
+        if (other2) {
+          db.ref("userDms/" + me + "/" + other2).update({ lastAt: msg.ts, lastFrom: me });
+          db.ref("userDms/" + other2 + "/" + me).update({ lastAt: msg.ts, lastFrom: me });
+        }
+      }
       clearTyping();
       sendMentions(text);
       input.value = "";
@@ -13772,9 +13817,19 @@ function flairName(name, rec) {
           var lastBanAt = banRec ? (banRec.at || 0) : 0;
           var bannedRecently = lastBanAt && (Date.now() - lastBanAt) < 30 * 86400000;
           infoBox.innerHTML = "<p>account age: <b>" + ageDays + " days</b> | xp: <b>" + xp + "</b> | past bans: <b>" + pastBans + "</b></p>";
-          // check for existing applications
-          db.ref("mhApplications").orderByChild("uid").equalTo(uid).once("value", function (asnap) {
-            var apps = asnap.val() || {};
+          // check for existing applications via the per-user index (the old
+          // parent list query was denied by the rules, so the form never appeared)
+          db.ref("mhAppsByUser/" + uid).once("value", function (isnap) {
+            var appIds = Object.keys(isnap.val() || {});
+            if (!appIds.length) { checkApps({}); return; }
+            var apps = {}, left = appIds.length;
+            appIds.forEach(function (appId) {
+              db.ref("mhApplications/" + appId).once("value", function (snap2) {
+                if (snap2.val()) { apps[appId] = snap2.val(); }
+                if (--left === 0) { checkApps(apps); }
+              });
+            });
+            function checkApps(apps) {
             var keys = Object.keys(apps);
             var pending = null, lastRejected = 0;
             for (var i = 0; i < keys.length; i++) {
@@ -13804,6 +13859,7 @@ function flairName(name, rec) {
               return;
             }
             formBox.style.display = "";
+            }
           });
         });
       });
@@ -13837,7 +13893,11 @@ function flairName(name, rec) {
             at: Date.now(),
             status: "pending"
           };
-          db.ref("mhApplications").push(app, function (err) {
+          var newRef = db.ref("mhApplications").push();
+          var appUpdates = {};
+          appUpdates["mhApplications/" + newRef.key] = app;
+          appUpdates["mhAppsByUser/" + uid + "/" + newRef.key] = true;
+          db.ref().update(appUpdates, function (err) {
             if (!err) {
               reasonEl.value = "";
               document.getElementById("mhapply-rules").checked = false;
@@ -13860,6 +13920,14 @@ function flairName(name, rec) {
     db.ref("mhApplications").orderByChild("at").once("value", function (snap) {
       var v = snap.val() || {};
       var keys = Object.keys(v).sort(function (a, b) { return (v[b].at || 0) - (v[a].at || 0); });
+      // self-heal: make sure every application has a per-user index entry
+      // (apps submitted before the index existed don't have one yet)
+      var heal = {};
+      for (var hi = 0; hi < keys.length; hi++) {
+        var ha = v[keys[hi]];
+        if (ha && ha.uid) { heal["mhAppsByUser/" + ha.uid + "/" + keys[hi]] = true; }
+      }
+      if (Object.keys(heal).length) { db.ref().update(heal); }
       box.innerHTML = "";
       var pending = keys.filter(function (k) { return v[k].status === "pending"; });
       if (!pending.length) { box.innerHTML = "<p>no pending applications</p>"; return; }
@@ -13909,6 +13977,8 @@ function flairName(name, rec) {
         div.appendChild(rj);
         box.appendChild(div);
       });
+    }, function (err) {
+      box.innerHTML = "<p>couldn't load applications: " + (err.code || err.message || err) + "</p>";
     });
   }
   /* ---------- check MH decisions on sign-in ---------- */
