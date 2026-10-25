@@ -226,18 +226,21 @@
   .emoji-picker { margin-top: 4px; }
   .emoji-picker .emoji-btn { font-size: 20px; font-weight: bold; padding: 8px 12px; }
   #pins-box { margin-bottom: 10px; }
-  #chess-board { width: 328px; max-width: 98vw; font-size: 0; border: 3px solid #111111; border-radius: 6px; }
-  .chess-sq { width: 41px; max-width: 12vw; height: 41px; font-size: 22px; border: 1px solid #111111; padding: 0; vertical-align: top; box-sizing: border-box; }
-  .chess-sq.light { background: #f5e6c8; }
-  .chess-sq.dark { background: #c9a06a; }
-  .chess-sq.sel { outline: 3px solid #111111; }
-  .chess-sq.tgtcap { outline: 3px solid #555555; }
-  .chess-sq.lastmv { box-shadow: inset 0 0 0 3px #666666; }
-  .chess-sq.incheck { box-shadow: inset 0 0 0 4px #000000; background: #888888 !important; }
-  .chess-piece { width: 88%; height: 88%; display: block; margin: auto; }
-  .chess-dot { font-size: 26px; line-height: 1; color: #333333; }
-  .chess-cap { width: 22px; height: 22px; vertical-align: middle; }
-  #chess-captured { margin: 6px 0; }
+  #chess-board { width: 328px; max-width: 98vw; font-size: 0; border: 3px solid #111111; border-radius: 8px; box-shadow: 0 3px 0 #111111; margin: 6px auto; background: #111111; }
+  .chess-sq { width: 41px; max-width: 12vw; height: 41px; font-size: 22px; border: 1px solid #111111; padding: 0; vertical-align: top; box-sizing: border-box; position: relative; }
+  .chess-sq.light { background: #f0dcb4; }
+  .chess-sq.dark { background: #b58863; }
+  .chess-sq.sel { outline: none; box-shadow: inset 0 0 0 3px #e8b923; }
+  .chess-sq.tgtcap { outline: none; box-shadow: inset 0 0 0 3px #c0392b; }
+  .chess-sq.lastmv { box-shadow: inset 0 0 0 3px rgba(255, 213, 79, 0.9); }
+  .chess-sq.incheck { box-shadow: inset 0 0 0 4px #c0392b; background: #e74c3c !important; }
+  .chess-piece { width: 88%; height: 88%; display: block; margin: auto; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45)); }
+  .chess-dot { font-size: 30px; line-height: 1; color: #2e7d32; text-shadow: 0 0 2px #ffffff; }
+  .chess-cap { width: 24px; height: 24px; vertical-align: middle; background: #ffffff; border: 1px solid #999999; border-radius: 3px; margin-right: 2px; }
+  .chess-coord { position: absolute; font-size: 10px; font-weight: bold; line-height: 1; pointer-events: none; }
+  .chess-coord.file { right: 2px; bottom: 1px; }
+  .chess-coord.rank { left: 2px; top: 1px; }
+  #chess-captured { margin: 6px 0; padding: 4px; border: 1px solid #cccccc; border-radius: 6px; }
   .pin-row {
     border-left: 4px solid #111111;
     padding-left: 8px;
@@ -1205,6 +1208,10 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+    <h2>oct 24, 2026</h2>
+    <p><b>chess refresh</b> — clearer board with rank/file coordinates on the edges, better contrast squares, a gold highlight for the selected piece, a red ring for captures, and a real red check warning (it used to be grey and easy to miss). pieces also got a soft shadow so they stand out more. same game, just easier on the eyes.</p>
+    <p><b>life sim ribbons on the title screen</b> — the ribbons tab already showed your collected vs not-collected ribbons during a life, but now there's a ribbons button on the life sim title screen too, so you can check your collection before starting a new life.</p>
+    <p><b>notification tap fix</b> — custom "notify me when someone talks" popups used to do nothing when tapped (they called a function that didn't exist). now tapping one jumps straight into that room, like the DM, poll, and mention popups already did.</p>
     <h2>oct 21, 2026</h2>
     <p><b>cookie clicker upgrades x9</b> — mega finger (+10/click), diamond finger (+25/click), plasma finger (+60/click), cookie factory (+25/sec), cookie mine (+100/sec), cookie portal (+500/sec), lucky charm (golden cookies show up twice as often and pay double), and two recipes that double ALL your production: butter recipe and secret recipe. happy clicking!</p>
     <h2>oct 18, 2026</h2>
@@ -1414,6 +1421,8 @@
     <label for="life-name-input">your name</label>
     <input id="life-name-input" type="text" maxlength="16" placeholder="leave blank for random" autocomplete="off">
     <button id="life-start-btn">start life</button>
+    <button id="life-ribbons-start-btn" class="secondary">ribbons</button>
+    <div id="life-ribbons-start" class="hidden"></div>
   </div>
   <div id="life-game" class="hidden">
     <div id="life-stats"></div>
@@ -8603,6 +8612,21 @@ function renderChess() {
       var r = (i / 8) | 0, f = i % 8;
       var sq = document.createElement("button");
       sq.className = "chess-sq " + (((r + f) % 2) ? "dark" : "light");
+      var coordColor = (((r + f) % 2) ? "#f0dcb4" : "#b58863");
+      if (d >= 56) {
+        var fl = document.createElement("span");
+        fl.className = "chess-coord file";
+        fl.textContent = "abcdefgh".charAt(f);
+        fl.style.color = coordColor;
+        sq.appendChild(fl);
+      }
+      if (d % 8 === 0) {
+        var rk = document.createElement("span");
+        rk.className = "chess-coord rank";
+        rk.textContent = String(8 - r);
+        rk.style.color = coordColor;
+        sq.appendChild(rk);
+      }
       var p = chessState.b[i];
       if (p && chessSprites[p]) {
         var im = document.createElement("img");
@@ -9886,6 +9910,7 @@ function flairName(name, rec) {
     document.getElementById("life-start").className = "";
     document.getElementById("life-game").className = "hidden";
     document.getElementById("life-dead").className = "hidden";
+    document.getElementById("life-ribbons-start").className = "hidden";
   }
   function showLifeGame() {
     document.getElementById("life-start").className = "hidden";
@@ -9900,6 +9925,23 @@ function flairName(name, rec) {
   document.getElementById("life-start-btn").onclick = function () {
     var nm = document.getElementById("life-name-input").value.replace(/^\s+|\s+$/g, "").substring(0, 16);
     lifeNewLife(nm || null, null);
+  };
+  document.getElementById("life-ribbons-start-btn").onclick = function () {
+    var box = document.getElementById("life-ribbons-start");
+    if (box.className === "") { box.className = "hidden"; return; }
+    var got = lifeRibbonsGet();
+    box.innerHTML = "";
+    var h = document.createElement("h3");
+    h.textContent = "ribbons (" + got.length + "/" + LIFE_ALL_RIBBONS.length + ")";
+    box.appendChild(h);
+    for (var i = 0; i < LIFE_ALL_RIBBONS.length; i++) {
+      var r = LIFE_ALL_RIBBONS[i];
+      var p = document.createElement("p");
+      p.textContent = (got.indexOf(r) !== -1 ? "✓ " : "✗ ") + r;
+      if (got.indexOf(r) === -1) { p.style.color = "#999999"; }
+      box.appendChild(p);
+    }
+    box.className = "";
   };
   function statBar(label, val) {
     return '<div class="stat"><span>' + label + '</span><div class="bar"><div class="fill" style="width:' + val + '%"></div></div></div>';
@@ -13973,7 +14015,7 @@ function flairName(name, rec) {
                   } catch (e) {}
                   var title = (rule.user === "*") ? (m.name || "someone") + " is talking!" : rule.user + " is talking!";
                   notify(title, "in " + (rooms[rid].name || "chat") + ": " + String(m.text || "").substring(0, 50),
-                    function () { enterRoom(rid); });
+                    function () { openChat("rooms/" + rid + "/messages", "room: " + ((rooms[rid] && rooms[rid].name) || rid), "msgs"); });
                 }
               })(rid);
             }
