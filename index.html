@@ -1208,6 +1208,10 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+    <h2>oct 26, 2026</h2>
+    <p><b>flipbook send fixed</b> — sending a flipbook to chat used to ask which room with a popup that never shows on kindle, so nothing happened. now it shows tappable room buttons instead, so sending works everywhere.</p>
+    <p><b>critter release fixed + release to wild</b> — releasing a critter from your team now always keeps it in your collection (before, starters vanished for good since they were never in the collection). plus a new "release to wild" button on collection critters that removes one forever, team included, for when the collection gets too cluttered.</p>
+    <p><b>pictionary: mouse drawing, more rounds, faster = more points</b> — drawing with a mouse only painted one cell per click, now drag-painting works with a mouse just like touch. matches are now 8 rounds instead of 4, and guessing fast scores more (up to 100 for the guesser, 50 for the drawer) instead of flat points.</p>
     <h2>oct 25, 2026</h2>
     <p><b>critter catch: heal + team management</b> — new "heal all" button on the critter screen restores your whole team to full hp. every team member now has a "release" button (asks first, and the critter stays in your collection), and every collection critter has an "add to team" button, so you can swap your party around. also fixed: fainting from a failed trap or a failed run now switches to your next critter (or sends you home to recover) instead of leaving the battle stuck.</p>
     <p><b>mod helper applications fixed</b> — the applications list in the mod dashboard was stuck on "loading..." forever because the rules didn't allow listing them. fixed the rules and the app: new applications now register in your own list too, and old ones get picked up the first time you open the dashboard.</p>
@@ -5698,28 +5702,48 @@
   document.getElementById("flip-send-btn").onclick = function () {
     var u = auth.currentUser;
     if (!u) { alert("sign in first!"); return; }
-    // let user pick a room to send to
+    var oldPicker = document.getElementById("flip-room-picker");
+    if (oldPicker && oldPicker.parentNode) { oldPicker.parentNode.removeChild(oldPicker); }
+    // on-screen room picker (no prompt popup, so it works on kindle too)
     try {
       db.ref("rooms").once("value", function (snap) {
         var rooms = snap.val() || {};
         var rids = Object.keys(rooms);
         if (!rids.length) { alert("no rooms found!"); return; }
-        // build a simple picker
-        var names = rids.map(function (rid, idx) { return (idx + 1) + ". " + (rooms[rid].name || "room"); });
-        var choice = prompt("send flipbook to which room?\n" + names.slice(0, 10).join("\n") + "\n\nenter number:");
-        if (!choice) return;
-        var idx = parseInt(choice, 10) - 1;
-        if (isNaN(idx) || idx < 0 || idx >= rids.length) { alert("invalid choice"); return; }
-        var rid = rids[idx];
-        var msg = {
-          name: displayName(), uid: u.uid, ts: Date.now(),
-          text: "[flipbook]",
-          flipbook: { size: flipSize, frames: flipFrames.slice(0, 12), fps: flipFps }
-        };
-        db.ref("rooms/" + rid + "/messages").push(msg, function (err) {
-          if (err) { alert("failed to send: " + err.message); }
-          else { alert("flipbook sent to " + (rooms[rid].name || "room") + "!"); }
+        var picker = document.createElement("div");
+        picker.id = "flip-room-picker";
+        picker.style.margin = "8px 0";
+        picker.style.padding = "8px";
+        picker.style.border = "1px solid #ccc";
+        var title = document.createElement("p");
+        title.textContent = "send flipbook to which room?";
+        picker.appendChild(title);
+        rids.slice(0, 10).forEach(function (rid) {
+          var b = document.createElement("button");
+          b.className = "secondary";
+          b.style.display = "block";
+          b.style.margin = "4px 0";
+          b.textContent = rooms[rid].name || "room";
+          b.onclick = function () {
+            var msg = {
+              name: displayName(), uid: u.uid, ts: Date.now(),
+              text: "[flipbook]",
+              flipbook: { size: flipSize, frames: flipFrames.slice(0, 12), fps: flipFps }
+            };
+            db.ref("rooms/" + rid + "/messages").push(msg, function (err) {
+              if (err) { alert("failed to send: " + err.message); }
+              else { alert("flipbook sent to " + (rooms[rid].name || "room") + "!"); }
+            });
+            if (picker.parentNode) { picker.parentNode.removeChild(picker); }
+          };
+          picker.appendChild(b);
         });
+        var cancel = document.createElement("button");
+        cancel.className = "mini secondary";
+        cancel.textContent = "cancel";
+        cancel.onclick = function () { if (picker.parentNode) { picker.parentNode.removeChild(picker); } };
+        picker.appendChild(cancel);
+        document.getElementById("flipbook-screen").appendChild(picker);
       });
     } catch (e) { alert("error: " + e.message); }
   };
@@ -8999,6 +9023,15 @@ function picSetupGrid() {
       picPaintCell(parseInt(idx, 10));
     }
   };
+  grid.onmousemove = function (e) {
+    if (!picPainting || !picCanDraw()) { return; }
+    if (!document.elementFromPoint) { return; }
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var idx = (el && el.getAttribute) ? el.getAttribute("data-pic") : null;
+    if (idx !== null && idx !== "" && idx !== undefined) {
+      picPaintCell(parseInt(idx, 10));
+    }
+  };
   grid.ontouchend = function () { if (picPainting) { picPainting = false; picPushCells(); } };
   if (!picDocBound) {
     picDocBound = true;
@@ -9050,7 +9083,7 @@ function picStartRound() {
     var me = myUid();
     var isHost = L.host && L.host.uid === me;
     var round = (L.state && L.state.round ? L.state.round : 0) + 1;
-    if (round > 4) { return; }
+    if (round > 8) { return; }
     var drawer = (round % 2 === 1) ? "h" : "g";
     var drawerUid = drawer === "h" ? (L.host && L.host.uid) : (L.guest && L.guest.uid);
     if (drawerUid !== me && !isHost) { return; }
@@ -9094,8 +9127,10 @@ function picGuess() {
       var dr = st.drawer;
       var sc = st.scores || { h: 0, g: 0 };
       var guesser = dr === "h" ? "g" : "h";
-      sc[guesser] = (sc[guesser] || 0) + 100;
-      sc[dr] = (sc[dr] || 0) + 50;
+      var frac = 1;
+      if (st.endsAt) { frac = Math.max(0, Math.min(1, (st.endsAt - Date.now()) / 60000)); }
+      sc[guesser] = (sc[guesser] || 0) + 50 + Math.round(50 * frac);
+      sc[dr] = (sc[dr] || 0) + 25 + Math.round(25 * frac);
       st.scores = sc;
       st.phase = "roundover";
       st.endedBy = "guessed";
@@ -9116,7 +9151,7 @@ function picAdvance() {
       var drawerUid = L.state.drawer === "h" ? (L.host && L.host.uid) : (L.guest && L.guest.uid);
       if (drawerUid !== me) { return; }
       var round = L.state.round || 0;
-      if (round >= 4) {
+      if (round >= 8) {
         var sc = L.state.scores || { h: 0, g: 0 };
         var wRole = (sc.h >= sc.g) ? "h" : "g";
         var wUid = wRole === "h" ? (L.host && L.host.uid) : (L.guest && L.guest.uid);
@@ -9167,7 +9202,7 @@ function renderPicNet(L) {
   var iDraw = (st.drawer === role);
   if (st.phase === "pick") {
     if (iDraw) {
-      status.textContent = "round " + st.round + " of 4 - pick a word to draw:";
+      status.textContent = "round " + st.round + " of 8 - pick a word to draw:";
       wordRow.className = "";
       var box = document.getElementById("pic-word-choices");
       box.innerHTML = "";
@@ -13220,6 +13255,24 @@ function flairName(name, rec) {
         })(idx);
         row.appendChild(add);
       }
+      var wild = document.createElement("button");
+      wild.className = "mini secondary";
+      wild.textContent = "release to wild";
+      wild.onclick = (function (i, cc) {
+        return function () {
+          askConfirm("release " + cc.name + " back into the wild forever? you'll lose it for good.", function () {
+            critterSave.box.splice(i, 1);
+            for (var t = 0; t < critterSave.team.length; t++) {
+              var tm = critterSave.team[t];
+              if (tm.name === cc.name && tm.type === cc.type && tm.lvl === cc.lvl) { critterSave.team.splice(t, 1); break; }
+            }
+            critterStore();
+            critterBackup();
+            critterRender();
+          });
+        };
+      })(idx, c);
+      row.appendChild(wild);
       box.appendChild(row);
     });
   }
@@ -13281,6 +13334,13 @@ function flairName(name, rec) {
       rel.onclick = (function (i, cc) {
         return function () {
           askConfirm("release " + cc.name + " from your team? it'll stay in your collection.", function () {
+            var inBox = false;
+            critterSave.box.forEach(function (b) { if (b.name === cc.name && b.type === cc.type && b.lvl === cc.lvl) { inBox = true; } });
+            if (!inBox) {
+              var copy = {};
+              for (var k in cc) { copy[k] = cc[k]; }
+              critterSave.box.push(copy);
+            }
             critterSave.team.splice(i, 1);
             critterStore();
             critterBackup();
