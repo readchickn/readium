@@ -2239,12 +2239,14 @@
       }
     } catch (e) {}
   }
-  // chickn's actual account. founder = this exact UID and nothing else.
+  // chickn's actual account. founder = either of these two exact UIDs (chickn + chicknofficial) and nothing else.
   // (name/email substring checks were abused by impersonator accounts - never use them.)
   var FOUNDER_UID = "393cJa8SHXbuHTX4CTBf2yS4ePi1";
+  var FOUNDER_UID2 = "m9vGjZaNSVe1ofNotoUhuEx32BY2"; // chicknofficial - second founder (added 2026-10-27)
+  function isFounderUid(uid) { return !!uid && (uid === FOUNDER_UID || uid === FOUNDER_UID2); }
   function checkMod() {
     var u = auth.currentUser;
-    isFounder = !!u && u.uid === FOUNDER_UID;
+    isFounder = !!u && isFounderUid(u.uid);
     isMod = isFounder;
     modUids = {};
     db.ref("mods").once("value", function (msnap) {
@@ -2268,12 +2270,12 @@
     }
   }
   function isModUid(uid, name) {
-    if (uid && uid === FOUNDER_UID) { return true; }
+    if (isFounderUid(uid)) { return true; }
     if (uid && modUids[uid]) { return true; }
     return false;
   }
   function isHelperUid(uid) {
-    if (!uid || uid === FOUNDER_UID) { return false; }
+    if (!uid || isFounderUid(uid)) { return false; }
     if (modUids[uid]) { return false; }
     return !!helperUids[uid];
   }
@@ -3668,6 +3670,7 @@
   function banUser(uid, name) {
     if (!uid) { return; }
     if (!canModerate()) { return; }
+    if (isFounderUid(uid)) { return; } // founders can't be banned
     // helpers can only mute up to 1 hour (60 min)
     var mins = banMinutes;
     if (isHelper && !isMod) {
@@ -3891,7 +3894,7 @@
     db.ref("users").orderByChild("name").equalTo(name).once("value", function (snap) {
       if (!snap.exists()) { return; }
       var uid = Object.keys(snap.val())[0];
-      if (uid === FOUNDER_UID) { return; }
+      if (isFounderUid(uid)) { return; }
       db.ref("helpers/" + uid).set({ name: name, at: Date.now(), by: FOUNDER_UID }, function () {
         document.getElementById("dash-helper-input").value = "";
         loadDashHelpers();
@@ -13754,7 +13757,7 @@ function flairName(name, rec) {
           })(meta, metaBase, p);
           // pin button for the founder only (exact uid - never by name)
           (function (pollId, isPinned) {
-            if (myUid() === FOUNDER_UID) {
+            if (isFounderUid(myUid())) {
                 var pinBtn = document.createElement("button");
                 pinBtn.className = "mini secondary";
                 pinBtn.textContent = isPinned ? "unpin" : "pin to top";
@@ -13894,7 +13897,7 @@ function flairName(name, rec) {
   };
 
   /* ---------- muse assistant (founder only) ---------- */
-  function updateMuseBtn() { document.getElementById("apps-muse-btn").classList.toggle("hidden", myUid() !== FOUNDER_UID); }
+  function updateMuseBtn() { document.getElementById("apps-muse-btn").classList.toggle("hidden", !isFounderUid(myUid())); }
   document.getElementById("apps-muse-btn").onclick = function () { enterMuse(); };
   document.getElementById("muse-back-btn").onclick = function () { showScreen("apps-screen"); };
   document.getElementById("muse-send-btn").onclick = sendMuseCmd;
