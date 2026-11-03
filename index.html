@@ -212,12 +212,12 @@
     height: auto;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 12px;
+    padding: 10px;
     margin-bottom: 12px;
     word-wrap: break-word;
     overflow-wrap: break-word;
   }
-  .msg { margin: 0 0 14px 0; overflow-wrap: break-word; word-wrap: break-word; }
+  .msg { margin: 0 0 8px 0; overflow-wrap: break-word; word-wrap: break-word; }
   .msg-head { display: flex; align-items: center; }
   .msg .name { font-weight: bold; cursor: pointer; }
   .msg .time { font-size: 14px; color: #555555; margin-left: 8px; }
@@ -232,7 +232,7 @@
     margin-bottom: 4px;
   }
   .reactions { font-size: 17px; margin-top: 4px; }
-  .msg-actions { margin-top: 2px; }
+  .msg-actions { margin-top: 0; }
   .emoji-picker { margin-top: 4px; }
   .emoji-picker .emoji-btn { font-size: 20px; font-weight: bold; padding: 8px 12px; }
   #pins-box { margin-bottom: 10px; }
@@ -1024,20 +1024,38 @@
 <!-- LIFESTYLE HUB - to-dos, habits, water, mood, focus timer, notes -->
 <div id="lifehub-screen" class="hidden">
   <h1>lifestyle</h1>
-  <p style="font-size:16px">little everyday apps, all in one spot. everything saves on this device only.</p>
+  <p style="font-size:16px">tap a tile to open an app. everything saves on this device only.</p>
+  <div id="lh-tile-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0">
+    <button id="lh-tile-todo" class="secondary" style="padding:16px 8px;font-size:18px;">to-do list</button>
+    <button id="lh-tile-habits" class="secondary" style="padding:16px 8px;font-size:18px;">habits</button>
+    <button id="lh-tile-water" class="secondary" style="padding:16px 8px;font-size:18px;">water</button>
+    <button id="lh-tile-mood" class="secondary" style="padding:16px 8px;font-size:18px;">mood journal</button>
+    <button id="lh-tile-focus" class="secondary" style="padding:16px 8px;font-size:18px;">focus timer</button>
+    <button id="lh-tile-note" class="secondary" style="padding:16px 8px;font-size:18px;">note to self</button>
+  </div>
+  <div id="lh-section-todo" class="hidden">
   <h2>to-do list</h2>
   <input id="lh-todo-input" type="text" placeholder="add something to do..." style="width: 100%;">
   <button id="lh-todo-add">add</button>
   <div id="lh-todo-list" style="font-size:16px;margin:8px 0"></div>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
+  <div id="lh-section-habits" class="hidden">
   <h2>habits</h2>
   <p style="font-size:16px">tap a habit when you do it today. <span id="lh-habit-count"></span></p>
   <div id="lh-habit-list" style="font-size:16px;margin:8px 0"></div>
   <input id="lh-habit-input" type="text" placeholder="add a habit..." style="width: 100%;">
   <button id="lh-habit-add">add habit</button>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
+  <div id="lh-section-water" class="hidden">
   <h2>water</h2>
   <p style="font-size:16px">glasses today: <span id="lh-water-count">0</span></p>
   <button id="lh-water-plus">+ glass</button>
   <button id="lh-water-minus" class="secondary">- glass</button>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
+  <div id="lh-section-mood" class="hidden">
   <h2>mood journal</h2>
   <p style="font-size:16px">how are you feeling?</p>
   <button class="mini secondary" onclick="lhSaveMood('great')">great</button>
@@ -1047,15 +1065,23 @@
   <button class="mini secondary" onclick="lhSaveMood('rough')">rough</button>
   <input id="lh-mood-note" type="text" placeholder="a quick note (optional)..." style="width:96%;margin-top:6px;">
   <div id="lh-mood-list" style="font-size:16px;margin:8px 0"></div>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
+  <div id="lh-section-focus" class="hidden">
   <h2>focus timer</h2>
   <p style="font-size:24px" id="lh-focus-display">25:00</p>
   <button id="lh-focus-start">start</button>
   <button id="lh-focus-pause" class="secondary">pause</button>
   <button id="lh-focus-reset" class="secondary">reset</button>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
+  <div id="lh-section-note" class="hidden">
   <h2>note to self</h2>
   <textarea id="lh-note-text" placeholder="write yourself a note..." style="width:96%;min-height:80px;"></textarea>
   <button id="lh-note-save">save note</button>
   <p id="lh-note-msg" style="font-size:16px"></p>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
   <button id="lifehub-back-btn" class="secondary">back</button>
 </div>
 
@@ -1268,6 +1294,10 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+<h2>nov 2, 2026</h2>
+    <p><b>chat shows about 7 messages</b> — messages are a little tighter now, so around 7 fit on screen at once instead of just a few.</p>
+    <p><b>lifestyle tiles</b> — the lifestyle app now opens on a grid of tiles instead of everything stacked at once. tap a tile to open just that app: to-do list, habits, water, mood journal, focus timer, or note to self.</p>
+    <p><b>flipbooks to main chat</b> — sending a flipbook now has a main chat button at the top of the picker, so you can send one to the global chat, not just chat rooms.</p>
 <h2>nov 1, 2026</h2>
     <p><b>bigger text boxes, smaller text</b> — text boxes are full-width again with a slightly smaller font, so more of what you type fits. the chat message box now stretches across the bar instead of getting squeezed.</p>
     <p><b>pinterest actually embeds now</b> — opening the pinterest app shows an embedded profile right away (pinterest's own profile to start). paste your own board or profile link and tap "show it" to replace it, and it reloads automatically next time. pinterest itself still blocks a full-site embed, so boards and profiles use its official widget — "open on pinterest" still opens the full site logged in as you.</p>
@@ -5997,6 +6027,24 @@
         var title = document.createElement("p");
         title.textContent = "send flipbook to which room?";
         picker.appendChild(title);
+        var mainBtn = document.createElement("button");
+        mainBtn.className = "secondary";
+        mainBtn.style.display = "block";
+        mainBtn.style.margin = "4px 0";
+        mainBtn.textContent = "main chat";
+        mainBtn.onclick = function () {
+          var msg = {
+            name: displayName(), uid: u.uid, ts: Date.now(),
+            text: "[flipbook]",
+            flipbook: { size: flipSize, frames: flipFrames.slice(), fps: flipFps }
+          };
+          db.ref("rooms/general/messages").push(msg, function (err) {
+            if (err) { flashNotice("failed to send: " + err.message); }
+            else { flashNotice("flipbook sent to main chat!"); }
+          });
+          if (picker.parentNode) { picker.parentNode.removeChild(picker); }
+        };
+        picker.appendChild(mainBtn);
         rids.slice(0, 10).forEach(function (rid) {
           var b = document.createElement("button");
           b.className = "secondary";
@@ -6141,6 +6189,7 @@
     var note = lhLoad("lh_note", "");
     document.getElementById("lh-note-text").value = note;
     document.getElementById("lh-note-msg").textContent = "";
+    lhShowTiles();
     showScreen("lifehub-screen");
   }
   document.getElementById("lh-todo-add").onclick = function () {
@@ -6163,6 +6212,26 @@
     document.getElementById("lh-note-msg").textContent = "saved!";
   };
   document.getElementById("lifehub-back-btn").onclick = function () { lhFocusPause(); showScreen("apps-screen"); };
+  function lhShowTiles() {
+    document.getElementById("lh-tile-grid").classList.remove("hidden");
+    ["todo", "habits", "water", "mood", "focus", "note"].forEach(function (s) {
+      document.getElementById("lh-section-" + s).classList.add("hidden");
+    });
+  }
+  function lhShowSection(name) {
+    document.getElementById("lh-tile-grid").classList.add("hidden");
+    document.getElementById("lh-section-" + name).classList.remove("hidden");
+  }
+  document.getElementById("lh-tile-todo").onclick = function () { lhShowSection("todo"); };
+  document.getElementById("lh-tile-habits").onclick = function () { lhShowSection("habits"); };
+  document.getElementById("lh-tile-water").onclick = function () { lhShowSection("water"); };
+  document.getElementById("lh-tile-mood").onclick = function () { lhShowSection("mood"); };
+  document.getElementById("lh-tile-focus").onclick = function () { lhShowSection("focus"); };
+  document.getElementById("lh-tile-note").onclick = function () { lhShowSection("note"); };
+  (function () {
+    var backs = document.getElementsByClassName("lh-section-back");
+    for (var i = 0; i < backs.length; i++) { backs[i].onclick = function () { lhShowTiles(); }; }
+  })();
 /* ---------- pinterest (official widget embed) ---------- */
   var pinScriptAdded = false;
   var pinScriptFailed = false;
