@@ -203,6 +203,9 @@
      the input bar, so more messages fit without the whole page scrolling. */
   #chat-screen { display: flex; flex-direction: column; height: calc(100vh - 20px); height: calc(100dvh - 20px); box-sizing: border-box; }
   #chat-screen.hidden { display: none; }
+#pinterest-screen { display: flex; flex-direction: column; height: calc(100vh - 20px); height: calc(100dvh - 20px); box-sizing: border-box; }
+#pinterest-screen.hidden { display: none; }
+#pin-widget-box { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #chat-screen .chat-nav { display: flex; gap: 8px; }
   #chat-screen .chat-nav button { width: auto; flex: 1 1 0; margin: 4px 0; padding: 8px 6px; font-size: 18px; }
   #messages {
@@ -1092,13 +1095,9 @@
 <!-- PINTEREST -->
 <div id="pinterest-screen" class="hidden">
   <h1>pinterest</h1>
-  <p style="font-size:16px">open pinterest to log in with your own account, or paste a board or profile link below to embed it here (optional). example board: pinterest.com/username/board-name — example profile: pinterest.com/username</p>
-  <input id="pin-url-input" type="text" placeholder="paste a pinterest link..." style="width:96%;">
-  <div style="margin:8px 0"><button id="pin-load-btn">show it</button> <button id="pin-open-btn" class="secondary">open on pinterest</button></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px"><button id="pin-open-btn" class="mini secondary">open on pinterest</button><button id="pinterest-back-btn" class="mini secondary">back</button></div>
   <p id="pin-msg" style="font-size:16px"></p>
-  <div id="pin-widget-box" style="margin:8px 0"></div>
-  <p style="font-size:14px">opening this app shows an embedded profile right away (pinterest's own profile to start). paste your own board or profile link above and tap "show it" to replace it — it reloads automatically next time. pinterest itself blocks a full-site embed, so boards and profiles here use pinterest's own official widget. to just browse pinterest logged in as yourself, use "open on pinterest" with no link — it opens pinterest.com.</p>
-  <button id="pinterest-back-btn" class="secondary">back</button>
+  <div id="pin-widget-box"></div>
 </div>
 
 <!-- FLIPBOOK -->
@@ -1301,6 +1300,7 @@
     <p><b>smaller back + home buttons in chat</b> — the back and home buttons moved up into a small row at the top of the chat screen, so the messages box is taller and more fits on screen.</p>
     <p><b>your messages on the right</b> — your own messages now show on the right side of the chat in a dark grey bubble, like text messages. everyone else's stay on the left.</p>
     <p><b>own messages, discord-style</b> — your messages are now a light grey square on the right, like discord. everyone else's stay on the left.</p>
+    <p><b>pinterest fills the page</b> — the link box is gone, the embed fills the whole screen. tap 'open on pinterest' at the top to log in on pinterest.com.</p>
 <h2>nov 2, 2026</h2>
     <p><b>chat shows about 7 messages</b> — messages are a little tighter now, so around 7 fit on screen at once instead of just a few.</p>
     <p><b>lifestyle tiles</b> — the lifestyle app now opens on a grid of tiles instead of everything stacked at once. tap a tile to open just that app: to-do list, habits, water, mood journal, focus timer, or note to self.</p>
@@ -6257,7 +6257,7 @@
     box.innerHTML = "";
     var a = document.createElement("a");
     a.setAttribute("data-pin-do", isBoard ? "embedBoard" : "embedUser");
-    a.setAttribute("data-pin-board-width", String(Math.max(200, Math.min(400, (window.innerWidth || 400) - 32))));
+    a.setAttribute("data-pin-board-width", String(Math.max(200, Math.min(900, (window.innerWidth || 400) - 32))));
     a.setAttribute("data-pin-scale-height", "240");
     a.setAttribute("data-pin-scale-width", "80");
     a.href = url;
@@ -6276,18 +6276,12 @@
     } else { msg.textContent = "pinterest is still loading — tap 'show it' again or use 'open on pinterest'."; }
   }
   function enterPinterest() {
-    var inp = document.getElementById("pin-url-input");
-    try { inp.value = localStorage.getItem("pinterest_last_url") || ""; } catch (e) {}
     showScreen("pinterest-screen");
-    if (inp.value) { pinShowUrl(inp.value); }
-    else { pinShowUrl("https://www.pinterest.com/pinterest/", false); }
+    pinShowUrl("https://www.pinterest.com/pinterest/", false);
   }
   document.getElementById("apps-pinterest-btn").onclick = function () { enterPinterest(); };
-  document.getElementById("pin-load-btn").onclick = function () { pinShowUrl(document.getElementById("pin-url-input").value); };
   document.getElementById("pin-open-btn").onclick = function () {
-    var u = document.getElementById("pin-url-input").value;
-    if (u) { window.open(u.indexOf("http") === 0 ? u : "https://" + u, "_blank"); }
-    else { window.open("https://www.pinterest.com", "_blank"); }
+    window.open("https://www.pinterest.com", "_blank");
   };
   document.getElementById("pinterest-back-btn").onclick = function () { showScreen("apps-screen"); };
   document.getElementById("poxel-fill-btn").onclick = function () {
