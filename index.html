@@ -218,6 +218,10 @@
     overflow-wrap: break-word;
   }
   .msg { margin: 0 0 8px 0; overflow-wrap: break-word; word-wrap: break-word; }
+.msg.own { display: table; margin-left: auto; margin-right: 0; max-width: 85%; background: #333333; color: #ffffff; border-radius: 12px; padding: 8px 10px; }
+.msg.own .time { color: #bbbbbb; }
+.msg.own .reply-quote { color: #cccccc; border-left-color: #999999; }
+.msg.own a { color: #9ecfff; }
   .msg-head { display: flex; align-items: center; }
   .msg .name { font-weight: bold; cursor: pointer; }
   .msg .time { font-size: 14px; color: #555555; margin-left: 8px; }
@@ -1295,6 +1299,7 @@
   <div id="log-entries">
 <h2>nov 5, 2026</h2>
     <p><b>smaller back + home buttons in chat</b> — the back and home buttons moved up into a small row at the top of the chat screen, so the messages box is taller and more fits on screen.</p>
+    <p><b>your messages on the right</b> — your own messages now show on the right side of the chat in a dark grey bubble, like text messages. everyone else's stay on the left.</p>
 <h2>nov 2, 2026</h2>
     <p><b>chat shows about 7 messages</b> — messages are a little tighter now, so around 7 fit on screen at once instead of just a few.</p>
     <p><b>lifestyle tiles</b> — the lifestyle app now opens on a grid of tiles instead of everything stacked at once. tap a tile to open just that app: to-do list, habits, water, mood journal, focus timer, or note to self.</p>
@@ -6938,6 +6943,7 @@
     var box = document.getElementById("messages");
     var wrap = document.createElement("div");
     wrap.className = "msg";
+    if (m.uid && auth.currentUser && m.uid === auth.currentUser.uid) { wrap.className = "msg own"; }
 
     var head = document.createElement("div");
     head.className = "msg-head";
