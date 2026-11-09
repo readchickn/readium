@@ -217,6 +217,15 @@
   #chat-sidebar button { font-size: 15px; padding: 6px 10px; margin: 2px 0; text-align: left; }
   #chat-sidebar button.cur { background: #eeeeee; color: #111111; font-weight: bold; }
   #chat-sidebar .side-head { font-size: 14px; font-weight: bold; color: #555555; margin: 4px 0; }
+  /* CHAT MAIN: wraps everything on the chat screen except the sidebar,
+     so the sidebar can sit beside it in a DM instead of above it. */
+  #chat-main { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+  /* CHATS ON THE SIDE: inside a DM the chats list is a side panel on the
+     left, like the screenshot, instead of a drop-down above the messages. */
+  #chat-screen.side { flex-direction: row; }
+  #chat-screen.side #chat-sidebar { flex: 0 0 230px; width: 230px; max-height: none; margin: 0 8px 0 0; box-sizing: border-box; overflow-y: auto; }
+  #chat-screen.side #chat-sidebar button { display: block; width: 100%; box-sizing: border-box; }
+  #chat-screen.side #chat-main { flex: 1 1 auto; min-width: 0; }
   /* DM MENU: top-corner menu inside a DM chat (star, block, report, profile). */
   #dm-menu { border: 3px solid #111111; padding: 8px; margin-bottom: 8px; background: #ffffff; }
   #dm-menu button { font-size: 15px; padding: 6px 10px; margin: 2px 0; text-align: left; }
@@ -1160,6 +1169,7 @@
 
 <!-- CHAT -->
 <div id="chat-screen" class="hidden">
+  <div id="chat-main">
   <h1 id="chat-title">room <span class="dm-dot dot hidden" title="unread dms"></span></h1>
   <div class="chat-nav"><button id="back-btn" class="secondary">back</button><button id="chat-home-btn" class="secondary">home</button><button id="sidebar-toggle-btn" class="secondary hidden">&#x2630; rooms</button><button id="dm-menu-btn" class="secondary hidden">&#x22EE; menu</button></div>
   <div id="dm-menu" class="hidden"></div>
@@ -1175,6 +1185,7 @@
   <div id="chat-bar">
     <input id="msg-input" type="text" maxlength="500" placeholder="Type a message... (use @name to mention)" autocomplete="off">
     <button id="send-btn">Send</button>
+  </div>
   </div>
 </div>
 
@@ -1318,6 +1329,8 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+<h2>nov 9, 2026</h2>
+    <p><b>chats on the side</b> — inside a DM, your chat list now sits on the left side of the screen, like the screenshot — tap any chat to switch to it, and tap "new message" at the top to start a new DM. tap "☰ chats" at the top to hide the list. in rooms the list still drops down from the top like before.</p>
 <h2>nov 8, 2026</h2>
     <p><b>ToT reaction</b> — you can now react with ToT on chat messages, next to :3 and the rest.</p>
     <p><b>pinterest navigation</b> — paste any pinterest board or profile link in the box at the top to load it here, and "open on pinterest" now opens the full site at the board you're looking at, logged in as you. pinterest itself blocks embedding its whole site, so boards and profiles still load one at a time here.</p>
@@ -3133,7 +3146,29 @@
     var refPath = currentRefPath || "";
     return refPath.indexOf("dms/") === 0 ? "\u2630 chats" : "\u2630 rooms";
   }
+  /* Chats on the side: inside a DM the chats list is a side panel on the
+     left; in a room it stays a drop-down above the messages. showScreen
+     resets the chat screen's class, so this runs after it (see openChat). */
+  function placeChatSidebar() {
+    var cs = document.getElementById("chat-screen");
+    var box = document.getElementById("chat-sidebar");
+    var main = document.getElementById("chat-main");
+    if (!cs || !box || !main) { return; }
+    var isDm = (currentRefPath || "").indexOf("dms/") === 0;
+    if (isDm) {
+      cs.classList.add("side");
+      if (box.parentNode !== cs) { cs.insertBefore(box, main); }
+    } else {
+      cs.classList.remove("side");
+      if (box.parentNode !== main) {
+        var rep = document.getElementById("dm-report-btn");
+        if (rep) { main.insertBefore(box, rep); }
+        else { main.appendChild(box); }
+      }
+    }
+  }
   function updateChatSidebar() {
+    placeChatSidebar();
     var refPath = currentRefPath || "";
     var tog = document.getElementById("sidebar-toggle-btn");
     var isChat = refPath.indexOf("rooms/") === 0 || refPath.indexOf("dms/") === 0;
@@ -3162,6 +3197,11 @@
       head.className = "side-head";
       head.textContent = "your chats \u2014 tap to switch";
       box.appendChild(head);
+      var nm = document.createElement("button");
+      nm.className = "secondary";
+      nm.textContent = "new message";
+      nm.onclick = function () { enterDmScreen(); };
+      box.appendChild(nm);
       if (!me) { return; }
       db.ref("userDms/" + me).once("value", function (snap) {
         var data = snap.val() || {};
@@ -7014,7 +7054,6 @@
     document.getElementById("dm-report-btn").className = "mini secondary hidden";
     currentChatTitle = title;
     updateStarBtn();
-    updateChatSidebar();
     updateDmMenuBtn();
     var dmMenuEl = document.getElementById("dm-menu");
     if (dmMenuEl) { dmMenuEl.className = "hidden"; }
@@ -7025,6 +7064,19 @@
     box.innerHTML = "<p>loading...</p>";
     chatReturn = returnTo || "msgs";
     showScreen("chat-screen");
+    // first DM opened: show the chats side panel by default (unless she
+    // already opened/closed it herself, which the saved setting remembers)
+    if (isDmChat) {
+      var sbPref = null;
+      try { sbPref = lsGet("readium_chat_sidebar"); } catch (e) {}
+      if (sbPref === null || sbPref === undefined) {
+        chatSidebarOpen = true;
+        try { lsSet("readium_chat_sidebar", "1"); } catch (e) {}
+      }
+    }
+    // runs after showScreen: showScreen resets the chat screen's class,
+    // which would wipe the side-panel class placeChatSidebar sets.
+    updateChatSidebar();
     pinsRef = db.ref("pins/" + currentConvoKey);
     pinsRef.on("value", function (snap) { renderPins(snap.val()); });
     if (typingRef) { typingRef.off(); typingRef = null; }
