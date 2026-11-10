@@ -432,6 +432,9 @@
   #games-screen .tile { padding: 0; overflow: hidden; min-height: 0; aspect-ratio: 3 / 2; width: 46%; margin: 1%; }
   #games-screen .tile .g-logo-img { width: 100%; height: 100%; object-fit: contain; }
   .section-head { text-align: left; }
+  /* mod dashboard tiles */
+  .dash-tile { min-height: 84px; }
+  .dash-tile small { display: block; font-size: 14px; margin-top: 4px; }
   /* slim quick-nav bar (bottom, collapsible) */
   #side-nav { position: fixed; left: 0; right: 0; bottom: 0; background: #f4f4f4; border-top: 2px solid #111111; z-index: 60; padding: 6px; white-space: nowrap; overflow-x: auto; }
   #side-nav button { display: inline-block; font-size: 14px; padding: 8px 10px; margin: 0 4px 0 0; vertical-align: middle; }
@@ -846,11 +849,20 @@
 <!-- MOD DASHBOARD -->
 <div id="dash-screen" class="hidden">
   <h1>mod dashboard</h1>
+  <div id="dash-tiles">
+    <button class="tile dash-tile" data-sec="dash-sec-stats">stats<small>users, online, rooms</small></button><button class="tile dash-tile" data-sec="dash-sec-find">find user<small>search anyone</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-xp">give xp<small>grant or take xp</small></button><button class="tile dash-tile" data-sec="dash-sec-reports">reports<small>message reports</small></button><button class="tile dash-tile" data-sec="dash-sec-dmreports">DM reports<small>reported DMs</small></button><button class="tile dash-tile" data-sec="dash-sec-bans">banned users<small>ban + banned list</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-mods">moderators<small>add / remove mods</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-helpers">mod helpers<small>add / remove helpers</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-mhapps">applications<small>helper applications</small></button>
+  </div>
+  <button id="dash-back-btn" class="secondary hidden">&larr; back to dashboard</button>
+  <div id="dash-sec-stats" class="dash-sec hidden">
   <h2>stats</h2>
   <div id="dash-stats"><p>loading...</p></div>
+  </div>
+  <div id="dash-sec-find" class="dash-sec hidden">
   <h2>find user</h2>
   <input id="dash-search" type="text" maxlength="20" placeholder="search by name..." autocomplete="off">
   <div id="dash-search-results"></div>
+  </div>
+  <div id="dash-sec-xp" class="dash-sec hidden">
   <div id="dash-xp-wrap">
   <h2>give xp</h2>
   <input id="dash-xp-user" type="text" maxlength="20" placeholder="username...">
@@ -859,10 +871,16 @@
   <button id="dash-xp-btn" class="secondary">grant xp</button>
   <button id="dash-xp-take-btn" class="secondary">take away xp</button>
   </div>
+  </div>
+  <div id="dash-sec-reports" class="dash-sec hidden">
   <h2>reports</h2>
   <div id="dash-reports"><p>loading...</p></div>
+  </div>
+  <div id="dash-sec-dmreports" class="dash-sec hidden">
   <h2>DM reports</h2>
   <div id="dash-dm-reports"><p>loading...</p></div>
+  </div>
+  <div id="dash-sec-bans" class="dash-sec hidden">
   <h2>banned users</h2>
   <input id="ban-input" type="text" maxlength="20" placeholder="username to ban...">
   <input id="ban-reason" type="text" maxlength="120" placeholder="reason for ban...">
@@ -872,6 +890,8 @@
   <button id="ban-add-btn" class="secondary">ban user</button>
   <button id="dash-bans-toggle" class="secondary section-head">banned list +</button>
   <div id="dash-bans-wrap" class="hidden section-body"><div id="dash-bans"><p>loading...</p></div></div>
+  </div>
+  <div id="dash-sec-mods" class="dash-sec hidden">
   <div id="dash-mods-wrap" class="hidden">
     <h2>moderators</h2>
     <p style="font-size:16px">Only you see this. People you add can delete messages, pin, and ban.</p>
@@ -880,6 +900,8 @@
     <button id="dash-mods-toggle" class="secondary section-head">moderator list +</button>
     <div id="dash-mods-list-wrap" class="hidden section-body"><div id="dash-mod-list"></div></div>
   </div>
+  </div>
+  <div id="dash-sec-helpers" class="dash-sec hidden">
   <div id="dash-helpers-wrap" class="hidden">
     <h2>mod helpers (MH)</h2>
     <p style="font-size:16px">Only you see this. Helpers can delete messages and mute up to 1 hour. They cannot ban, pin, or manage mods.</p>
@@ -888,10 +910,13 @@
     <button id="dash-helpers-toggle" class="secondary section-head">mod helper list +</button>
     <div id="dash-helpers-list-wrap" class="hidden section-body"><div id="dash-helper-list"></div></div>
   </div>
+  </div>
+  <div id="dash-sec-mhapps" class="dash-sec hidden">
   <div id="dash-mhapps-wrap" class="hidden">
     <h2>mod helper applications</h2>
     <p style="font-size:16px">Only you can approve or reject these.</p>
     <div id="dash-mhapps-list"><p>loading...</p></div>
+  </div>
   </div>
   <button id="dash-home-btn" class="secondary">home</button>
 </div>
@@ -1329,6 +1354,8 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+<h2>nov 10, 2026</h2>
+    <p><b>mod dashboard tiles</b> — the mod dashboard used to be one long scrolling list. now it opens on a grid of tiles: stats, find user, give xp, reports, DM reports, banned users, moderators, mod helpers, and applications. tap a tile to open just that part, and "back to dashboard" takes you back to the tiles.</p>
 <h2>nov 9, 2026</h2>
     <p><b>+1 reaction shows the count</b> — the +1 (and -1) reaction used to show its name plus a count, like "+1 1". now the number is the count: 1 person shows "+1", 3 people show "+3". other reactions are unchanged.</p>
     <p><b>chats on the side</b> — inside a DM, your chat list now sits on the left side of the screen, like the screenshot — tap any chat to switch to it, and tap "new message" at the top to start a new DM. tap "☰ chats" at the top to hide the list. in rooms the list still drops down from the top like before.</p>
@@ -2653,6 +2680,13 @@
   document.getElementById("ttt-home-btn").onclick = function () { var lb = document.getElementById("ttt-leave-btn"); if (lb && lb.onclick) { lb.onclick(); } goHome(); };
   document.getElementById("profile-home-btn").onclick = goHome;
   document.getElementById("dash-home-btn").onclick = goHome;
+  document.getElementById("dash-back-btn").onclick = showDashTiles;
+  var dashTiles = document.getElementsByClassName("dash-tile");
+  for (var dti = 0; dti < dashTiles.length; dti++) {
+    (function (t) {
+      t.onclick = function () { openDashSection(t.getAttribute("data-sec")); };
+    })(dashTiles[dti]);
+  }
   /* ---------- settings (dropdown sections) ---------- */
   var settingsReturn = "profile";
   function setSectionToggle(key, label) {
@@ -3698,6 +3732,25 @@
       if (isFounder) { mhw.className = ""; loadMhApplications(); }
       else { mhw.className = "hidden"; }
     }
+    // tile layout: founder-only tiles hidden for mods/helpers
+    var ft = document.getElementsByClassName("dash-tile-founder");
+    for (var fi = 0; fi < ft.length; fi++) { ft[fi].style.display = isFounder ? "" : "none"; }
+    showDashTiles();
+  }
+  function showDashTiles() {
+    var secs = document.getElementsByClassName("dash-sec");
+    for (var i = 0; i < secs.length; i++) { secs[i].className = "dash-sec hidden"; }
+    document.getElementById("dash-tiles").className = "";
+    document.getElementById("dash-back-btn").className = "secondary hidden";
+  }
+  function openDashSection(id) {
+    var secs = document.getElementsByClassName("dash-sec");
+    for (var i = 0; i < secs.length; i++) { secs[i].className = "dash-sec hidden"; }
+    var sec = document.getElementById(id);
+    if (sec) { sec.className = "dash-sec"; }
+    document.getElementById("dash-tiles").className = "hidden";
+    document.getElementById("dash-back-btn").className = "secondary";
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
   function loadDashStats() {
     var box = document.getElementById("dash-stats");
