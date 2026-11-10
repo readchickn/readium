@@ -1330,6 +1330,7 @@
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
 <h2>nov 9, 2026</h2>
+    <p><b>+1 reaction shows the count</b> — the +1 (and -1) reaction used to show its name plus a count, like "+1 1". now the number is the count: 1 person shows "+1", 3 people show "+3". other reactions are unchanged.</p>
     <p><b>chats on the side</b> — inside a DM, your chat list now sits on the left side of the screen, like the screenshot — tap any chat to switch to it, and tap "new message" at the top to start a new DM. tap "☰ chats" at the top to hide the list. in rooms the list still drops down from the top like before.</p>
 <h2>nov 8, 2026</h2>
     <p><b>ToT reaction</b> — you can now react with ToT on chat messages, next to :3 and the rest.</p>
@@ -7434,7 +7435,13 @@
     if (!keys.length) { div.style.display = "none"; div.textContent = ""; return; }
     div.style.display = "block";
     var parts = [];
-    for (var j = 0; j < keys.length; j++) { parts.push(keys[j] + " " + counts[keys[j]]); }
+    for (var j = 0; j < keys.length; j++) {
+      var k = keys[j];
+      /* "+1" and "-1" are number-like, so the chip IS the count ("+3" for
+         3 people) instead of label + count ("+1 3"). */
+      if (k === "+1" || k === "-1") { parts.push(k.charAt(0) + counts[k]); }
+      else { parts.push(k + " " + counts[k]); }
+    }
     div.textContent = parts.join("   ");
   }
 
