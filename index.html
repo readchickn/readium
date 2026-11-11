@@ -25,11 +25,6 @@
   body.dark #signin-card input, body.dark #signin-card textarea, body.dark #confirm-card input, body.dark #confirm-card textarea { background: #ffffff; color: #111111; border-color: #111111; }
   body.dark .ptheme-stripes { color: #111111; }
   body.dark .ptheme-stripes h1, body.dark .ptheme-stripes h2, body.dark .ptheme-stripes p { color: #111111; }
-  body.dark .space-default { color: #111111; }
-  body.dark #space-inner.space-default h1, body.dark #space-inner.space-default h2, body.dark #space-inner.space-sunset h1, body.dark #space-inner.space-sunset h2 { color: #111111; }
-  body.dark .space-default a { color: #0645ad; }
-  body.dark #space-inner { border-color: #eeeeee; }
-  body.dark .space-border-dotted, body.dark .space-border-dashed, body.dark .space-border-double, body.dark .space-border-thick, body.dark .space-border-round { border-color: #eeeeee !important; }
   body.dark .decor-pick { background: #222222; border-color: #eeeeee; }
   body.dark .decor-pick.sel { background: #665511; outline-color: #eeeeee; }
   body.dark .border-pick { background: #222222; }
@@ -231,6 +226,7 @@
   #dm-menu button { font-size: 15px; padding: 6px 10px; margin: 2px 0; text-align: left; }
   #muse-bar { display: flex; gap: 8px; margin: 8px 0; }
   #muse-input { flex: 1 1 auto; min-width: 0; }
+  body.dark #muse-input { background: #222222; color: #eeeeee; }
   #muse-send-btn { width: auto; margin: 0; white-space: nowrap; }
 #pin-widget-box { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #chat-screen .chat-nav { display: flex; gap: 8px; }
@@ -480,23 +476,10 @@
   .ptheme-stripes { background: repeating-linear-gradient(45deg, #ffffff, #ffffff 6px, #dddddd 6px, #dddddd 12px) !important; }
   .ptheme-grid { background-image: linear-gradient(#cccccc 1px, transparent 1px), linear-gradient(90deg, #cccccc 1px, transparent 1px) !important; background-size: 12px 12px !important; }
   .ptheme-checker { background-image: linear-gradient(45deg, #dddddd 25%, transparent 25%), linear-gradient(-45deg, #dddddd 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #dddddd 75%), linear-gradient(-45deg, transparent 75%, #dddddd 75%) !important; background-size: 16px 16px !important; background-position: 0 0, 0 8px, 8px -8px, -8px 0 !important; }
-  /* personal space themes - CSS only, no graphics */
-  .space-default { background: #ffffff !important; }
-  .space-starry { background-color: #0a0a2e !important; background-image: radial-gradient(#ffffff 1.2px, transparent 1.2px), radial-gradient(#ccccff 1px, transparent 1px) !important; background-size: 42px 42px, 26px 26px !important; background-position: 0 0, 13px 19px !important; color: #ffffff !important; }
-  .space-ocean { background: linear-gradient(#2a9fd8, #0a3a5c) !important; color: #ffffff !important; }
-  .space-sunset { background: linear-gradient(#ffb35c, #ff5e78) !important; color: #111111; }
-  #space-inner { border: 2px solid #111; margin: 8px 0; }
-  .space-border-dotted { border: 4px dotted #111 !important; }
-  .space-border-dashed { border: 4px dashed #111 !important; }
-  .space-border-double { border: 6px double #111 !important; }
-  .space-border-thick { border: 6px solid #111 !important; }
-  .space-border-glow { border: 3px solid #7c4dff !important; box-shadow: 0 0 12px #7c4dff !important; border-radius: 12px !important; }
-  .space-border-round { border: 3px solid #111 !important; border-radius: 16px !important; }
   .decor-pick { display:inline-block; font-size:28px; padding:4px 8px; margin:4px; border:2px solid #000; cursor:pointer; background:#fff; }
   .decor-pick.sel { outline: 3px solid #000; background:#ffe9a8; }
   .border-pick { display:inline-block; width:64px; height:40px; margin:4px; cursor:pointer; vertical-align:middle; background:#fff; }
   .border-pick.sel { outline: 3px solid #000; }
-  #space-inner h1, #space-inner h2 { margin-left: 4px; }
   .theme-swatch { display: inline-block; width: 44px; height: 44px; border: 2px solid #000; margin: 4px; cursor: pointer; vertical-align: middle; }
   .theme-swatch.sel { outline: 3px solid #000; }
   .pet-pick { display: inline-block; margin: 4px; cursor: pointer; border: 2px solid #000; padding: 4px; vertical-align: middle; background: #fff; }
@@ -509,6 +492,13 @@
   .board-xp { margin-left: auto; }
   .board-tab { margin: 2px; }
   .board-tab.on { font-weight: bold; text-decoration: underline; }
+  /* LEADERBOARD POPUP: bio-window-sized card instead of a full screen. */
+  #board-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.96); z-index: 80; overflow-y: auto; }
+  #board-popup.hidden { display: none; }
+  #board-popup-card { border: 4px solid #111111; background: #ffffff; color: #111111; max-width: 420px; width: 92%; margin: 60px auto; padding: 16px; box-sizing: border-box; }
+  #board-popup-card h2 { color: #111111; }
+  #board-popup-list { max-height: 60vh; overflow-y: auto; }
+  body.dark #board-popup { background: rgba(0,0,0,0.92); }
 
   /* ---------- october event ---------- */
   #event-banner { display: flex; justify-content: center; gap: 10px; margin: 10px 0 4px 0; }
@@ -577,7 +567,7 @@
   <div id="topbar">
     <span id="clock">--:--</span>
     <span id="top-right">
-      <span id="user-chip" class="hidden"><span id="chip-pfp"></span><span id="chip-name"></span></span><button id="top-logout" class="mini secondary hidden">log out</button>
+      <button id="top-board-btn" class="mini secondary hidden" title="leaderboard">&#127942;</button><span id="user-chip" class="hidden"><span id="chip-pfp"></span><span id="chip-name"></span></span><button id="top-logout" class="mini secondary hidden">log out</button>
     </span>
   </div>
   <div class="logo" aria-label="Readium!"><span style="transform: rotate(-5deg)">R</span><span style="transform: rotate(3deg)">e</span><span style="transform: rotate(-2deg)">a</span><span style="transform: rotate(4deg)">d</span><span style="transform: rotate(-3deg)">i</span><span style="transform: rotate(2deg)">u</span><span style="transform: rotate(-4deg)">m</span><span style="transform: rotate(3deg)">!</span></div>
@@ -618,7 +608,7 @@
   <h1>muse</h1>
   <p style="font-size: 0.9em; opacity: 0.8;">tell me what to change and i'll do it</p>
   <div id="muse-history" style="flex: 1 1 auto; min-height: 0; overflow-y: auto; border: 1px solid #ccc; padding: 8px; margin: 8px 0; text-align: left;"></div>
-  <div id="muse-bar" style="display:flex;gap:8px;margin:8px 0;"><input id="muse-input" type="text" placeholder="type a command..." style="flex:1 1 auto;min-width:0;"><button id="muse-send-btn" style="width:auto;margin:0;white-space:nowrap;">send</button></div>
+  <div id="muse-bar" style="display:flex;gap:8px;margin:8px 0;"><input id="muse-input" type="text" placeholder="type a command..." style="flex:1 1 auto;min-width:0;background:#ffffff;color:#111111;"><button id="muse-send-btn" style="width:auto;margin:0;white-space:nowrap;">send</button></div>
   <button id="muse-back-btn" class="secondary">back</button>
 </div>
 
@@ -728,6 +718,16 @@
   </div>
   <div id="board-list"></div>
   <button id="board-home-btn" class="secondary">home</button>
+</div>
+
+<!-- LEADERBOARD POPUP (bio-window sized) -->
+<div id="board-popup" class="hidden">
+  <div id="board-popup-card">
+    <div style="text-align:right"><button id="board-popup-close" class="mini secondary">close</button></div>
+    <h2 id="board-popup-title">leaderboard</h2>
+    <div id="board-popup-tabs" style="text-align:center"></div>
+    <div id="board-popup-list"></div>
+  </div>
 </div>
 
 <!-- OCTOBER EVENT -->
@@ -946,41 +946,6 @@
   <button id="profile-home-btn" class="secondary">home</button>
 </div>
 
-<!-- PERSONAL SPACE -->
-<div id="space-screen" class="hidden">
-  <div id="space-inner" class="space-default" style="padding:12px;min-height:60vh;">
-    <div style="text-align:center;">
-      <div id="space-pfp"></div>
-      <h1 id="space-name">space</h1>
-    </div>
-    <div id="space-decor" style="text-align:center;font-size:30px;letter-spacing:8px;min-height:10px;"></div>
-    <h2>about</h2>
-    <p id="space-bio">no bio yet</p>
-    <h2>stats</h2>
-    <div id="space-stats"><p>loading...</p></div>
-    <h2>badges</h2>
-    <div id="space-badges"><p>no badges yet</p></div>
-    <button id="space-edit-btn" class="secondary hidden">edit my space</button>
-    <div id="space-editor" class="hidden">
-      <h2>edit my space</h2>
-      <label for="space-bio-input">about me</label>
-      <textarea id="space-bio-input" maxlength="300" placeholder="tell people about you..."></textarea>
-      <h2>theme</h2>
-      <div id="space-theme-picker"></div>
-      <p id="space-theme-note" style="font-size:14px"></p>
-      <h2>borders (free!)</h2>
-      <div id="space-border-picker"></div>
-      <h2>decorations (free!)</h2>
-      <p style="font-size:14px">pick up to 5 to show at the top of your space</p>
-      <div id="space-decor-picker"></div>
-      <button id="space-save-btn">save space</button>
-      <div id="space-ok"></div>
-    </div>
-    <br>
-    <button id="space-back-btn" class="secondary">back</button>
-  </div>
-</div>
-
 <!-- SETTINGS -->
 <div id="settings-screen" class="hidden">
   <h1>settings</h1>
@@ -1041,7 +1006,7 @@
   </div>
   <button id="set-sec-acct" class="secondary section-head">account +</button>
   <div id="set-body-acct" class="hidden section-body">
-    <p style="font-size:16px">Delete your account forever. This removes your profile, your space, and your settings. This cannot be undone!</p>
+    <p style="font-size:16px">Delete your account forever. This removes your profile and your settings. This cannot be undone!</p>
     <button id="delete-account-btn" class="secondary">delete my account</button>
     <p id="delete-acct-msg" style="font-size:16px"></p>
   </div>
@@ -1148,8 +1113,10 @@
 <div id="pinterest-screen" class="hidden">
   <h1>pinterest</h1>
   <div style="display:flex;gap:8px;margin-bottom:8px"><button id="pin-open-btn" class="mini secondary">open on pinterest</button><button id="pinterest-back-btn" class="mini secondary">back</button></div>
-  <p style="font-size:16px">paste any pinterest board or profile link below to load it here. "open on pinterest" opens the full site at the board you're looking at, logged in as you, so you can browse all of pinterest. pinterest itself blocks embedding the whole site, so boards and profiles load one at a time here.</p>
+  <p style="font-size:16px">paste any pinterest board or profile link below to load it here — or just type a username and the link fills itself in. "open on pinterest" opens the full site at the board you're looking at, logged in as you, so you can browse all of pinterest. pinterest itself blocks embedding the whole site, so boards and profiles load one at a time here. use the zoom buttons to see pins up close.</p>
   <div style="display:flex;gap:8px;margin-bottom:8px"><input id="pin-url-input" type="text" placeholder="paste a pinterest link..." style="flex:1 1 auto;min-width:0;"><button id="pin-load-btn" style="width:auto;white-space:nowrap;">show it</button></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><label for="pin-user-input" style="margin:0;white-space:nowrap;">username:</label><input id="pin-user-input" type="text" placeholder="pinterest username..." style="flex:1 1 auto;min-width:0;"></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><button id="pin-zoom-out-btn" class="mini secondary">zoom out</button><button id="pin-zoom-in-btn" class="mini secondary">zoom in</button><button id="pin-zoom-reset-btn" class="mini secondary">reset zoom</button><span id="pin-zoom-label" style="font-size:15px;"></span></div>
   <p id="pin-msg" style="font-size:16px"></p>
   <div id="pin-widget-box"></div>
 </div>
@@ -1201,6 +1168,8 @@
   <div id="chat-sidebar" class="hidden"></div>
   <button id="dm-report-btn" class="mini secondary hidden" style="margin-bottom:8px">report this DM</button>
   <button id="star-room-btn" class="mini secondary hidden" style="margin-bottom:8px">star this room</button>
+  <button id="report-room-btn" class="mini secondary hidden" style="margin-bottom:8px">report this room</button>
+  <button id="delete-room-btn" class="mini secondary hidden" style="margin-bottom:8px">delete this room</button>
   <div id="pins-box"></div>
   <div id="messages"></div>
   <button id="latest-btn" class="mini secondary hidden">jump to latest</button>
@@ -1355,6 +1324,14 @@
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
 <h2>nov 10, 2026</h2>
+    <p><b>mod helper applications, one at a time</b> — reviewing helper applications in the mod dashboard now shows one person at a time with two big approve / deny buttons. tapping deny asks why: not a good fit, account too new, looks like an alt, broke rules before, or other.</p>
+    <p><b>leaderboards pop up now</b> — leaderboards don't take over the whole screen anymore. there's a small trophy button in the top corner of home, and on every game, cookie clicker, alchemy, and the october event. tap it and the leaderboard pops up in a small window about the size of a bio.</p>
+    <p><b>my space is gone</b> — the my space screen and its store themes are gone. your free decorations still live on your profile, under your bio.</p>
+    <p><b>mods can delete rooms</b> — mods (and chickn) now get a "delete this room" button inside any room except #general. it asks first, then removes the room, its listing, and its pins.</p>
+    <p><b>public rooms: one every 5 hours</b> — you can only make a public room once every 5 hours now, so the room list doesn't fill up with spam. private rooms are unlimited, and mods aren't limited.</p>
+    <p><b>report rooms</b> — every room now has a "report this room" button. room reports show up in the mod dashboard, where mods can jump to the room or delete it.</p>
+    <p><b>muse box fix</b> — what you type in the muse box now always shows up: the text is always visible, your command appears in the list the second you send it, and the list refreshes itself while you're looking at it.</p>
+    <p><b>pinterest username + zoom</b> — in the pinterest app you can just type a username and it fills in the link for you (like mia → pinterest.com/mia/). there are also zoom in / zoom out buttons so you can see pins up close.</p>
     <p><b>mod dashboard tiles</b> — the mod dashboard used to be one long scrolling list. now it opens on a grid of tiles: stats, find user, give xp, reports, DM reports, banned users, moderators, mod helpers, and applications. tap a tile to open just that part, and "back to dashboard" takes you back to the tiles.</p>
 <h2>nov 9, 2026</h2>
     <p><b>+1 reaction shows the count</b> — the +1 (and -1) reaction used to show its name plus a count, like "+1 1". now the number is the count: 1 person shows "+1", 3 people show "+3". other reactions are unchanged.</p>
@@ -2182,7 +2159,7 @@
     return u ? (u.displayName || "Reader") : "Reader";
   }
   function showScreen(id) {
-    var screens = ["home-screen", "msgs-screen", "mentions-screen", "hood-screen", "suggest-screen", "store-screen", "board-screen", "create-screen", "join-screen", "dm-screen", "dash-screen", "profile-screen", "settings-screen", "pfp-screen", "chat-screen", "games-screen", "gamemenu-screen", "life-screen", "ttt-screen", "c4-screen", "chess-screen", "pic-screen", "gol-screen", "sol-screen", "log-screen", "poll-screen", "apps-screen", "muse-screen", "mhapply-screen", "chatbot-screen", "critter-screen", "critter-pvp-screen", "alc-screen", "gamble-screen", "gametitle-screen", "event-screen", "donate-screen", "poxel-screen", "lifehub-screen", "pinterest-screen", "cookie-screen", "flipbook-screen", "snake-screen", "starfall-screen", "space-screen", "2048-screen"];
+    var screens = ["home-screen", "msgs-screen", "mentions-screen", "hood-screen", "suggest-screen", "store-screen", "board-screen", "create-screen", "join-screen", "dm-screen", "dash-screen", "profile-screen", "settings-screen", "pfp-screen", "chat-screen", "games-screen", "gamemenu-screen", "life-screen", "ttt-screen", "c4-screen", "chess-screen", "pic-screen", "gol-screen", "sol-screen", "log-screen", "poll-screen", "apps-screen", "muse-screen", "mhapply-screen", "chatbot-screen", "critter-screen", "critter-pvp-screen", "alc-screen", "gamble-screen", "gametitle-screen", "event-screen", "donate-screen", "poxel-screen", "lifehub-screen", "pinterest-screen", "cookie-screen", "flipbook-screen", "snake-screen", "starfall-screen", "2048-screen"];
     for (var i = 0; i < screens.length; i++) {
       var el = document.getElementById(screens[i]);
       if (el) { el.className = (screens[i] === id) ? "" : "hidden"; }
@@ -2240,6 +2217,8 @@
       chip.className = "hidden";
       logout.className = "mini secondary hidden";
     }
+    var tbb = document.getElementById("top-board-btn");
+    if (tbb) { tbb.className = u ? "mini secondary" : "mini secondary hidden"; }
     updateDashBtn();
     updateOnlinePanel();
     renderPinnedHome();
@@ -3103,11 +3082,32 @@
   }
 
   /* ---------- create room ---------- */
+  var PUBLIC_ROOM_COOLDOWN_MS = 5 * 3600000;
   function createRoom(isPublic) {
     showRoomError("");
     var id = cleanRoomName(document.getElementById("room-input").value);
     if (!id) { showRoomError("Enter a room name first."); return; }
     if (hasBannedWord(id)) { showRoomError("Pick a cleaner room name."); return; }
+    // public rooms: one every 5 hours (mods/founder exempt; rules back this up)
+    if (isPublic && !isMod) {
+      var me = myUid();
+      if (!me) { showRoomError("Sign in first."); return; }
+      db.ref("publicRoomCooldown/" + me).once("value", function (csnap) {
+        var last = csnap.val();
+        if (typeof last === "number" && Date.now() - last < PUBLIC_ROOM_COOLDOWN_MS) {
+          var waitMs = PUBLIC_ROOM_COOLDOWN_MS - (Date.now() - last);
+          var wh = Math.floor(waitMs / 3600000);
+          var wm = Math.ceil((waitMs % 3600000) / 60000);
+          showRoomError("you can only make a public room once every 5 hours \u2014 try again in " + wh + "h " + wm + "m.");
+          return;
+        }
+        doCreateRoom(isPublic, id);
+      }, function () { doCreateRoom(isPublic, id); });
+      return;
+    }
+    doCreateRoom(isPublic, id);
+  }
+  function doCreateRoom(isPublic, id) {
     var now = Date.now();
     db.ref("rooms/" + id + "/meta").transaction(function (cur) {
       if (cur) { return; }
@@ -3115,7 +3115,11 @@
     }, function (err, committed) {
       if (err) { showRoomError("Could not create room. Try again."); return; }
       if (!committed) { showRoomError("That room already exists — join it instead."); return; }
-      if (isPublic) { db.ref("roomList/" + id).set({ name: id, createdAt: now }); }
+      if (isPublic) {
+        db.ref("roomList/" + id).set({ name: id, createdAt: now });
+        var me2 = myUid();
+        if (me2) { db.ref("publicRoomCooldown/" + me2).set(now); }
+      }
       document.getElementById("room-input").value = "";
       openChat("rooms/" + id + "/messages", "room: " + id, "msgs");
     });
@@ -3141,7 +3145,7 @@
     if (i === -1) { list.push(roomId); } else { list.splice(i, 1); }
     saveStarred(list);
     renderStarred();
-    updateStarBtn();
+    updateStarBtn(); updateRoomBtns();
   }
   function renderStarred() {
     var box = document.getElementById("starred-rooms");
@@ -3173,6 +3177,65 @@
       }
     }
     btn.className = "mini secondary hidden";
+  }
+  /* ---------- room buttons: report (anyone) + delete (mods) ---------- */
+  function updateRoomBtns() {
+    var refPath = currentRefPath || "";
+    var repBtn = document.getElementById("report-room-btn");
+    var delBtn = document.getElementById("delete-room-btn");
+    var roomId = "";
+    if (refPath.indexOf("rooms/") === 0) { roomId = refPath.split("/")[1] || ""; }
+    if (roomId && roomId !== "general") {
+      repBtn.className = "mini secondary";
+      repBtn.onclick = reportCurrentRoom;
+      if (isMod) {
+        delBtn.className = "mini secondary";
+        delBtn.onclick = function () { deleteRoom(roomId); };
+      } else {
+        delBtn.className = "mini secondary hidden";
+      }
+    } else {
+      repBtn.className = "mini secondary hidden";
+      delBtn.className = "mini secondary hidden";
+    }
+  }
+  function deleteRoom(roomId) {
+    if (!roomId || roomId === "general") { return; }
+    if (!isMod) { flashNotice("only mods can delete rooms."); return; }
+    askConfirm("Delete the room '" + roomId + "' forever? All its messages go away too.", function () {
+      db.ref("rooms/" + roomId).remove(function (err) {
+        if (err) { flashNotice("could not delete room: " + (err.code || err.message || err)); return; }
+        db.ref("roomList/" + roomId).remove();
+        try { if (currentConvoKey) { db.ref("pins/" + currentConvoKey).remove(); } } catch (e) {}
+        flashNotice("room deleted.");
+        enterJoin();
+      });
+    });
+  }
+  function reportCurrentRoom() {
+    var refPath = currentRefPath || "";
+    if (refPath.indexOf("rooms/") !== 0) { return; }
+    var roomId = refPath.split("/")[1] || "";
+    if (!roomId || roomId === "general") { return; }
+    if (!myUid()) { return; }
+    askConfirm("Why are you reporting this room?", function (reason) {
+      db.ref("reports").push({
+        kind: "room",
+        msgId: roomId,
+        refPath: "rooms/" + roomId,
+        title: "room: " + roomId,
+        text: roomId,
+        name: roomId,
+        uid: "",
+        reporter: myUid(),
+        reporterName: displayName(),
+        notes: String(reason || "").trim().substring(0, 200),
+        at: Date.now()
+      }, function (err) {
+        if (err) { flashNotice("could not report room."); return; }
+        flashNotice("room reported. mods will take a look.");
+      });
+    }, true);
   }
   /* ---------- chat sidebar: collapsible chats/rooms list inside chat ---------- */
   var chatSidebarOpen = false;
@@ -3924,7 +3987,7 @@
         var p1 = document.createElement("p");
         p1.innerHTML = "";
         var b1 = document.createElement("b");
-        b1.textContent = "reported message";
+        b1.textContent = (r.kind === "room") ? "reported room" : "reported message";
         p1.appendChild(b1);
         row.appendChild(p1);
         var p2 = document.createElement("p");
@@ -3943,14 +4006,22 @@
         view.textContent = "view";
         view.onclick = function () {
           enterDashCleanup();
-          if ((r.refPath || "").indexOf("hoodPosts") === 0) { enterHood(); }
+          if (r.kind === "room" && r.msgId) { openChat("rooms/" + r.msgId + "/messages", "room: " + r.msgId, "msgs"); }
+          else if ((r.refPath || "").indexOf("hoodPosts") === 0) { enterHood(); }
           else if ((r.refPath || "").indexOf("suggestions") === 0) { enterSuggest(); }
           else { openChat(r.refPath, r.title || "chat", (r.refPath || "").indexOf("dms/") === 0 ? "dm" : "msgs"); }
         };
         var del = document.createElement("button");
         del.className = "mini secondary";
-        del.textContent = "delete msg";
+        del.textContent = (r.kind === "room") ? "delete room" : "delete msg";
         del.onclick = function () {
+          if (r.kind === "room") {
+            askConfirm("Delete the room '" + (r.msgId || "?") + "' forever?", function () {
+              deleteRoom(r.msgId);
+              db.ref("reports/" + k).remove();
+            });
+            return;
+          }
           askConfirm("Delete this message?", function () {
             var rp = String(r.refPath || "");
             var okPath = rp.indexOf("rooms/") === 0 || rp.indexOf("dms/") === 0 || rp.indexOf("hoodPosts") === 0 || rp.indexOf("suggestions") === 0;
@@ -3989,7 +4060,7 @@
         };
         row.appendChild(view);
         row.appendChild(del);
-        row.appendChild(ban);
+        if (r.kind !== "room") { row.appendChild(ban); }
         row.appendChild(dis);
         row.appendChild(help);
         box.appendChild(row);
@@ -6529,6 +6600,31 @@
   document.getElementById("pin-open-btn").onclick = function () {
     window.open(pinCurrentUrl || "https://www.pinterest.com", "_blank");
   };
+  /* pinterest username shortcut: type a username, the link fills itself in */
+  var pinUserInput = document.getElementById("pin-user-input");
+  if (pinUserInput) {
+    pinUserInput.addEventListener("input", function () {
+      var u = pinUserInput.value.replace(/[^a-zA-Z0-9_]/g, "");
+      if (u !== pinUserInput.value) { pinUserInput.value = u; }
+      document.getElementById("pin-url-input").value = u ? "pinterest.com/" + u + "/" : "";
+    });
+    pinUserInput.addEventListener("change", function () {
+      var v = document.getElementById("pin-url-input").value;
+      if (v) { pinShowUrl(v); }
+    });
+  }
+  /* pinterest zoom: make the pins bigger to see them up close */
+  var pinZoom = 1;
+  function pinSetZoom(z) {
+    pinZoom = Math.max(1, Math.min(2.5, z));
+    var box = document.getElementById("pin-widget-box");
+    if (box) { box.style.transform = "scale(" + pinZoom + ")"; box.style.transformOrigin = "top left"; }
+    var lbl = document.getElementById("pin-zoom-label");
+    if (lbl) { lbl.textContent = pinZoom === 1 ? "" : ("zoom " + pinZoom + "x"); }
+  }
+  document.getElementById("pin-zoom-in-btn").onclick = function () { pinSetZoom(pinZoom + 0.5); };
+  document.getElementById("pin-zoom-out-btn").onclick = function () { pinSetZoom(pinZoom - 0.5); };
+  document.getElementById("pin-zoom-reset-btn").onclick = function () { pinSetZoom(1); };
   document.getElementById("pinterest-back-btn").onclick = function () { showScreen("apps-screen"); };
   document.getElementById("poxel-fill-btn").onclick = function () {
     poxelTool = (poxelTool === "fill") ? "brush" : "fill";
@@ -6784,178 +6880,8 @@
     });
   }
 
-  /* ---------- personal spaces ---------- */
-  var currentSpaceUid = null;
-  var spaceEditTheme = "default";
-  function enterSpace(uid) {
-    if (!uid) { return; }
-    currentSpaceUid = uid;
-    try { document.getElementById("profile-popup").className = "hidden"; } catch (e) {}
-    ppUid = null;
-    db.ref("users/" + uid).once("value", function (usnap) {
-      var urec = usnap.val() || {};
-      db.ref("userSpaces/" + uid).once("value", function (ssnap) {
-        renderSpace(uid, urec, ssnap.val() || {});
-        showScreen("space-screen");
-      });
-    });
-  }
-  function renderSpace(uid, urec, sdata) {
-    var me = myUid();
-    var nm = urec.name || "user";
-    document.getElementById("space-name").textContent = nm + "'s space";
-    var pfpBox = document.getElementById("space-pfp");
-    pfpBox.innerHTML = "";
-    pfpBox.appendChild(pfpImg(urec.pfp || blankPfp(), 4));
-    // theme background
-    var tdef = spaceThemeDefFor(sdata.theme) || spaceThemeDefFor("default");
-    document.getElementById("space-inner").className = tdef.cls + " " + (spaceBorderDefFor(sdata.border).cls || "");
-    var dEl = document.getElementById("space-decor");
-    dEl.textContent = (Array.isArray(sdata.decor) ? sdata.decor : []).join(" ");
-    document.getElementById("space-bio").textContent = sdata.bio || "no bio yet";
-    // stats
-    var statsBox = document.getElementById("space-stats");
-    statsBox.innerHTML = "<p>loading...</p>";
-    db.ref("users/" + uid + "/xp").once("value", function (xsnap) {
-      var xp = xsnap.val() || 0;
-      statsBox.innerHTML = "<p>xp: <b>" + xp + "</b></p>";
-    });
-    // badges
-    var bBox = document.getElementById("space-badges");
-    bBox.innerHTML = "";
-    db.ref("userBadges/" + uid).once("value", function (bsnap) {
-      var v = bsnap.val() || {};
-      var keys = Object.keys(v);
-      if (!keys.length) { bBox.innerHTML = "<p>no badges yet</p>"; return; }
-      keys.forEach(function (bid) { bBox.appendChild(badgeImg(bid, 48)); });
-    });
-    // editor only for the owner
-    var editBtn = document.getElementById("space-edit-btn");
-    var editor = document.getElementById("space-editor");
-    if (uid === me) {
-      editBtn.className = "secondary";
-      editBtn.textContent = "edit my space";
-      editBtn.onclick = function () {
-        var ed = document.getElementById("space-editor");
-        if (ed.className === "hidden") {
-          ed.className = "";
-          document.getElementById("space-bio-input").value = sdata.bio || "";
-          document.getElementById("space-ok").textContent = "";
-          renderSpaceThemePicker(sdata.theme || "default");
-          spaceEditBorder = sdata.border || "none";
-          spaceEditDecor = Array.isArray(sdata.decor) ? sdata.decor.slice(0, 5) : [];
-          renderSpaceBorderPicker(spaceEditBorder);
-          renderSpaceDecorPicker(spaceEditDecor);
-          editBtn.textContent = "hide editor";
-        } else {
-          ed.className = "hidden";
-          editBtn.textContent = "edit my space";
-        }
-      };
-    } else {
-      editBtn.className = "secondary hidden";
-      editor.className = "hidden";
-    }
-  }
-  function renderSpaceThemePicker(currentTheme) {
-    spaceEditTheme = currentTheme || "default";
-    var box = document.getElementById("space-theme-picker");
-    box.innerHTML = "";
-    var me = myUid();
-    if (!me) { return; }
-    db.ref("users/" + me + "/spaceThemes").once("value", function (snap) {
-      var owned = snap.val() || [];
-      if (!Array.isArray(owned)) { owned = []; }
-      spaceThemeDefs.forEach(function (td) {
-        var canUse = td.id === "default" || owned.indexOf(td.id) !== -1;
-        (function (td, canUse) {
-          var sw = document.createElement("div");
-          sw.className = "theme-swatch " + td.cls + (spaceEditTheme === td.id ? " sel" : "");
-          sw.title = td.name + (canUse ? "" : " (buy in shop!)");
-          sw.style.opacity = canUse ? "1" : "0.4";
-          sw.onclick = function () {
-            if (!canUse) { flashNotice("buy this theme in the shop first!"); return; }
-            spaceEditTheme = td.id;
-            renderSpaceThemePicker(td.id);
-          };
-          box.appendChild(sw);
-          var lb = document.createElement("span");
-          lb.style.fontSize = "13px"; lb.style.marginRight = "8px";
-          lb.textContent = td.name + (canUse ? "" : " (shop)");
-          box.appendChild(lb);
-        })(td, canUse);
-      });
-      document.getElementById("space-theme-note").textContent = "more themes in the shop!";
-    });
-  }
-  var spaceBorderDefs = [
-    { id: "none", name: "none", cls: "" },
-    { id: "dotted", name: "dotted", cls: "space-border-dotted" },
-    { id: "dashed", name: "dashed", cls: "space-border-dashed" },
-    { id: "double", name: "double", cls: "space-border-double" },
-    { id: "thick", name: "thick", cls: "space-border-thick" },
-    { id: "glow", name: "glow", cls: "space-border-glow" },
-    { id: "round", name: "rounded", cls: "space-border-round" }
-  ];
-  function spaceBorderDefFor(id) { for (var i = 0; i < spaceBorderDefs.length; i++) { if (spaceBorderDefs[i].id === id) { return spaceBorderDefs[i]; } } return spaceBorderDefs[0]; }
-  var spaceDecorChoices = ["\u2605", "\u2606", "\u2665", "\u2661", "\u266A", "\u273F", "\u2740", "\u2726", "\u2727", "\u2666", "\u2663", "\u25CF", "\u25CB", "\u25B2"];
-  var spaceEditBorder = "none";
-  var spaceEditDecor = [];
-  function renderSpaceBorderPicker(cur) {
-    spaceEditBorder = cur || "none";
-    var box = document.getElementById("space-border-picker");
-    if (!box) { return; }
-    box.innerHTML = "";
-    spaceBorderDefs.forEach(function (bd) {
-      var sw = document.createElement("div");
-      sw.className = "border-pick " + bd.cls + (spaceEditBorder === bd.id ? " sel" : "");
-      sw.title = bd.name;
-      sw.onclick = function () {
-        spaceEditBorder = bd.id;
-        renderSpaceBorderPicker(bd.id);
-      };
-      box.appendChild(sw);
-      var lb = document.createElement("span");
-      lb.style.fontSize = "13px"; lb.style.marginRight = "8px";
-      lb.textContent = bd.name;
-      box.appendChild(lb);
-    });
-  }
-  function renderSpaceDecorPicker(curArr) {
-    spaceEditDecor = Array.isArray(curArr) ? curArr.slice(0, 5) : [];
-    var box = document.getElementById("space-decor-picker");
-    if (!box) { return; }
-    box.innerHTML = "";
-    spaceDecorChoices.forEach(function (ch) {
-      var sp = document.createElement("span");
-      sp.className = "decor-pick" + (spaceEditDecor.indexOf(ch) !== -1 ? " sel" : "");
-      sp.textContent = ch;
-      sp.onclick = function () {
-        var i = spaceEditDecor.indexOf(ch);
-        if (i !== -1) { spaceEditDecor.splice(i, 1); }
-        else {
-          if (spaceEditDecor.length >= 5) { flashNotice("pick up to 5 decorations!"); return; }
-          spaceEditDecor.push(ch);
-        }
-        renderSpaceDecorPicker(spaceEditDecor);
-      };
-      box.appendChild(sp);
-    });
-  }
-  function saveSpace() {
-    var me = myUid();
-    if (!me) { return; }
-    var bio = document.getElementById("space-bio-input").value.substring(0, 300);
-    db.ref("userSpaces/" + me).set({ bio: bio, theme: spaceEditTheme, border: spaceEditBorder, decor: spaceEditDecor, at: Date.now() }, function (err) {
-      var ok = document.getElementById("space-ok");
-      if (err) { ok.textContent = "save failed!"; return; }
-      ok.textContent = "space saved!";
-      enterSpace(me);
-    });
-  }
-  document.getElementById("space-save-btn").onclick = saveSpace;
-  document.getElementById("space-back-btn").onclick = function () { showScreen("profile-screen"); };
 
+  var spaceDecorChoices = ["\u2605", "\u2606", "\u2665", "\u2661", "\u266A", "\u273F", "\u2740", "\u2726", "\u2727", "\u2666", "\u2663", "\u25CF", "\u25CB", "\u25B2"];
   /* ---------- profile decorations (moved here from my space) ---------- */
   var profileEditDecor = [];
   function renderProfileDecorPicker(curArr) {
@@ -7107,7 +7033,7 @@
     var isDmChat = refPath.indexOf("dms/") === 0;
     document.getElementById("dm-report-btn").className = "mini secondary hidden";
     currentChatTitle = title;
-    updateStarBtn();
+    updateStarBtn(); updateRoomBtns();
     updateDmMenuBtn();
     var dmMenuEl = document.getElementById("dm-menu");
     if (dmMenuEl) { dmMenuEl.className = "hidden"; }
@@ -8553,7 +8479,19 @@
   }
   function cookieLoadBoard() {
     var box = document.getElementById("cookie-board");
-    box.innerHTML = "<p>loading...</p>";
+    if (!box) { return; }
+    box.innerHTML = "";
+    var b = document.createElement("button");
+    b.className = "mini secondary";
+    b.textContent = "\uD83C\uDFC6 most cookies";
+    b.onclick = function () { openCookieBoardPopup(); };
+    box.appendChild(b);
+  }
+  function openCookieBoardPopup() {
+    boardPopupKind = "cookie";
+    openBoardPopup("most cookies");
+    var list = document.getElementById("board-popup-list");
+    list.innerHTML = "<p>loading...</p>";
     db.ref("cookieScores").once("value", function (snap) {
       var v = snap.val() || {};
       var rows = [];
@@ -8564,16 +8502,16 @@
       }
       rows.sort(function (a, b) { return b.score - a.score; });
       rows = rows.slice(0, 10);
-      box.innerHTML = "";
-      if (!rows.length) { box.innerHTML = "<p>nobody yet — be the first!</p>"; return; }
+      list.innerHTML = "";
+      if (!rows.length) { list.innerHTML = "<p>nobody yet — be the first!</p>"; return; }
       var me = myUid();
       for (var i = 0; i < rows.length; i++) {
         var p = document.createElement("p");
         p.textContent = (i + 1) + ". " + rows[i].name + " \u2014 " + rows[i].score + " cookies";
         if (rows[i].uid === me) { p.style.fontWeight = "bold"; }
-        box.appendChild(p);
+        list.appendChild(p);
       }
-    }, function (err) { box.innerHTML = "<p>could not load.</p>"; });
+    }, function (err) { list.innerHTML = "<p>could not load.</p>"; });
   }
   function enterCookie() {
     stopOpenGames();
@@ -10731,7 +10669,18 @@ var WINBOARD_TITLES = { ttt: "tic tac toe", c4: "connect four", chess: "chess", 
 function loadWinBoard(game) {
   var box = document.getElementById("winboard-" + game);
   if (!box) { return; }
-  box.innerHTML = "<p>loading...</p>";
+  box.innerHTML = "";
+  var b = document.createElement("button");
+  b.className = "mini secondary";
+  b.textContent = "\uD83C\uDFC6 most wins";
+  b.onclick = function () { openWinBoardPopup(game); };
+  box.appendChild(b);
+}
+function openWinBoardPopup(game) {
+  boardPopupKind = "wins";
+  openBoardPopup("most wins \u2014 " + (WINBOARD_TITLES[game] || game));
+  var list = document.getElementById("board-popup-list");
+  list.innerHTML = "<p>loading...</p>";
   db.ref("gameWins/" + game).once("value", function (snap) {
     var v = snap.val() || {};
     var rows = [];
@@ -10742,19 +10691,16 @@ function loadWinBoard(game) {
     }
     rows.sort(function (a, b) { return b.count - a.count; });
     rows = rows.slice(0, 10);
-    box.innerHTML = "";
-    var h = document.createElement("h2");
-    h.textContent = "most wins \u2014 " + (WINBOARD_TITLES[game] || game);
-    box.appendChild(h);
-    if (!rows.length) { box.innerHTML += "<p>nobody has won yet \u2014 be the first!</p>"; return; }
+    list.innerHTML = "";
+    if (!rows.length) { list.innerHTML = "<p>nobody has won yet \u2014 be the first!</p>"; return; }
     var me = myUid();
     for (var i = 0; i < rows.length; i++) {
       var p = document.createElement("p");
       p.textContent = (i + 1) + ". " + rows[i].name + " \u2014 " + rows[i].count + " win" + (rows[i].count === 1 ? "" : "s");
       if (rows[i].uid === me) { p.style.fontWeight = "bold"; }
-      box.appendChild(p);
+      list.appendChild(p);
     }
-  }, function (err) { box.innerHTML = "<p>could not load.</p>"; });
+  }, function (err) { list.innerHTML = "<p>could not load.</p>"; });
 }
 function watchXp() {
   var u = auth.currentUser;
@@ -10792,9 +10738,6 @@ var storeItems = [
   { id: "theme_stripes", kind: "theme", themeKey: "stripes", name: "stripes theme", desc: "striped background for your profile", cost: 60 },
   { id: "theme_grid", kind: "theme", themeKey: "grid", name: "grid theme", desc: "grid background for your profile", cost: 60 },
   { id: "theme_checker", kind: "theme", themeKey: "checker", name: "checker theme", desc: "checkerboard background for your profile", cost: 60 },
-  { id: "spacetheme_starry", kind: "spacetheme", themeKey: "starry", name: "starry night space theme", desc: "a starry night background for your personal space", cost: 50 },
-  { id: "spacetheme_ocean", kind: "spacetheme", themeKey: "ocean", name: "ocean waves space theme", desc: "a blue ocean background for your personal space", cost: 50 },
-  { id: "spacetheme_sunset", kind: "spacetheme", themeKey: "sunset", name: "sunset space theme", desc: "an orange and pink sunset background for your personal space", cost: 50 },
   { id: "boost", kind: "boost", name: "xp boost", desc: "double xp for 24 hours", cost: 120 },
   { id: "box", kind: "box", name: "mystery box", desc: "random prize! 70% xp (25-60), 20% theme, 10% 12h xp boost", cost: 30 }
 ];
@@ -10808,28 +10751,44 @@ function themeDefFor(id) {
   for (var i = 0; i < themeDefs.length; i++) { if (themeDefs[i].id === id) { return themeDefs[i]; } }
   return null;
 }
-/* personal space themes - CSS only, no graphics */
-var spaceThemeDefs = [
-  { id: "default", name: "plain white", cls: "space-default" },
-  { id: "starry", name: "starry night", cls: "space-starry" },
-  { id: "ocean", name: "ocean waves", cls: "space-ocean" },
-  { id: "sunset", name: "sunset", cls: "space-sunset" }
-];
-function spaceThemeDefFor(id) {
-  for (var i = 0; i < spaceThemeDefs.length; i++) { if (spaceThemeDefs[i].id === id) { return spaceThemeDefs[i]; } }
-  return null;
-}
 var boardTab = "day";
-function enterBoard() { showScreen("board-screen"); loadBoard(); }
-function loadBoard() {
-  var tabs = document.getElementsByClassName("board-tab");
+var boardPopupKind = "";
+function openBoardPopup(title) {
+  document.getElementById("board-popup-title").textContent = title || "leaderboard";
+  document.getElementById("board-popup-tabs").innerHTML = "";
+  document.getElementById("board-popup-list").innerHTML = "";
+  document.getElementById("board-popup").className = "";
+}
+function closeBoardPopup() {
+  boardPopupKind = "";
+  document.getElementById("board-popup").className = "hidden";
+}
+document.getElementById("board-popup-close").onclick = closeBoardPopup;
+function enterBoard() { openXpBoardPopup(); }
+function openXpBoardPopup() {
+  if (!myUid()) { flashNotice("sign in to see the leaderboard."); return; }
+  boardPopupKind = "xp";
+  openBoardPopup("leaderboard");
+  var tabsBox = document.getElementById("board-popup-tabs");
+  [["day", "today"], ["week", "week"], ["month", "month"], ["all", "all time"]].forEach(function (pair) {
+    var t = document.createElement("button");
+    t.className = "mini secondary board-tab";
+    t.setAttribute("data-b", pair[0]);
+    t.textContent = pair[1];
+    tabsBox.appendChild(t);
+  });
+  loadBoard(document.getElementById("board-popup-list"), tabsBox);
+}
+document.getElementById("top-board-btn").onclick = function () { openXpBoardPopup(); };
+function loadBoard(listEl, tabsBox) {
+  var tabs = tabsBox ? tabsBox.getElementsByTagName("button") : document.getElementsByClassName("board-tab");
   for (var i = 0; i < tabs.length; i++) {
     (function (t) {
       t.className = "mini secondary board-tab" + (t.getAttribute("data-b") === boardTab ? " on" : "");
-      t.onclick = function () { boardTab = t.getAttribute("data-b"); loadBoard(); };
+      t.onclick = function () { boardTab = t.getAttribute("data-b"); loadBoard(listEl, tabsBox); };
     })(tabs[i]);
   }
-  var list = document.getElementById("board-list");
+  var list = listEl || document.getElementById("board-list");
   list.innerHTML = "<p>loading...</p>";
   var now = new Date();
   var isAll = boardTab === "all";
@@ -10945,14 +10904,6 @@ function openStoreDetails(it) {
       };
       opts.appendChild(b);
     });
-  } else if (it.kind === "spacetheme") {
-    // preview: mock space with the theme background
-    var smock = document.createElement("div");
-    smock.style.cssText = "border:2px solid #111;padding:16px;max-width:280px;margin:0 auto;";
-    var sdef = spaceThemeDefFor(it.themeKey);
-    if (sdef) { smock.className = sdef.cls; }
-    smock.innerHTML = "<p><b>my space</b></p><p style='font-size:14px'>this is how your space would look!</p>";
-    prev.appendChild(smock);
   } else if (it.kind === "boost") {
     prev.innerHTML = "<p style='font-size:48px'>\u26a1</p><p>2x xp for 24 hours!</p>";
   } else if (it.kind === "box") {
@@ -10978,7 +10929,7 @@ document.getElementById("store-d-close").onclick = function () {
 function storeBuyItem(it) {
   var me = myUid();
   if (itemExpired(it)) { flashNotice("that one's gone!"); return; }
-  if ((it.kind === "pet" || it.kind === "theme" || it.kind === "spacetheme") && storeOwned(it.id)) { flashNotice("already owned!"); document.getElementById("store-modal").className = "hidden"; return; }
+  if ((it.kind === "pet" || it.kind === "theme") && storeOwned(it.id)) { flashNotice("already owned!"); document.getElementById("store-modal").className = "hidden"; return; }
   if (myXp < it.cost) { flashNotice("not enough xp!"); return; }
   if (it.kind === "box") {
     changeXp(me, -it.cost);
@@ -10996,29 +10947,6 @@ function storeBuyItem(it) {
         myBoostUntil = until; renderStore(); refreshHome();
         flashNotice("2x xp for 24 hours!");
         document.getElementById("store-modal").className = "hidden";
-      });
-    });
-    return;
-  }
-  if (it.kind === "spacetheme") {
-    db.ref("users/" + me + "/spaceThemes").once("value", function (snap) {
-      var arr = snap.val() || [];
-      if (!Array.isArray(arr)) { arr = []; }
-      if (arr.indexOf(it.themeKey) === -1) { arr.push(it.themeKey); }
-      var up = {};
-      up["store/" + me + "/" + it.id] = true;
-      up["users/" + me + "/spaceThemes"] = arr;
-      db.ref().update(up, function (err) {
-        if (!err) {
-          changeXp(me, -it.cost);
-          if (!myStore) { myStore = {}; }
-          myStore[it.id] = true;
-          renderStore(); refreshHome();
-          flashNotice(it.name + " purchased! pick it in your space editor.");
-          document.getElementById("store-modal").className = "hidden";
-        } else {
-          flashNotice("purchase failed.");
-        }
       });
     });
     return;
@@ -14212,7 +14140,19 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   }
   function alcLoadBoard() {
     var box = document.getElementById("alc-board");
-    box.innerHTML = "<p>loading...</p>";
+    if (!box) { return; }
+    box.innerHTML = "";
+    var b = document.createElement("button");
+    b.className = "mini secondary";
+    b.textContent = "\uD83C\uDFC6 most elements";
+    b.onclick = function () { openAlcBoardPopup(); };
+    box.appendChild(b);
+  }
+  function openAlcBoardPopup() {
+    boardPopupKind = "alc";
+    openBoardPopup("most elements");
+    var list = document.getElementById("board-popup-list");
+    list.innerHTML = "<p>loading...</p>";
     db.ref("alcScores").once("value", function (snap) {
       var v = snap.val() || {};
       var rows = [];
@@ -14222,16 +14162,16 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       }
       rows.sort(function (a, b) { return b.count - a.count; });
       rows = rows.slice(0, 20);
-      box.innerHTML = "";
-      if (!rows.length) { box.innerHTML = "<p>nobody yet — be the first!</p>"; return; }
+      list.innerHTML = "";
+      if (!rows.length) { list.innerHTML = "<p>nobody yet — be the first!</p>"; return; }
       var me = myUid();
       for (var i = 0; i < rows.length; i++) {
         var p = document.createElement("p");
         p.textContent = (i + 1) + ". " + rows[i].name + " — " + rows[i].count;
         if (rows[i].uid === me) { p.style.fontWeight = "bold"; }
-        box.appendChild(p);
+        list.appendChild(p);
       }
-    }, function (err) { box.innerHTML = "<p>could not load.</p>"; });
+    }, function (err) { list.innerHTML = "<p>could not load.</p>"; });
   }
   var alcSearchQ = "";
   var alcOrder = [];
@@ -15347,11 +15287,24 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     db.ref("museCmds").push(cmd, function (err) {
       if (!err) {
         input.value = "";
+        appendMuseEcho(text);
         loadMuseHistory();
       } else {
         flashNotice("Failed: " + (err.code || err.message));
       }
     });
+  }
+  function appendMuseEcho(text) {
+    var box = document.getElementById("muse-history");
+    if (!box) { return; }
+    var d = document.createElement("div");
+    d.style.marginBottom = "8px";
+    d.style.padding = "6px";
+    d.style.borderBottom = "1px solid #eee";
+    d.innerHTML = "<b>" + escapeHtml(displayName()) + ":</b> " + escapeHtml(text) +
+      "<br><span style='color:orange;font-size:0.85em;'>pending</span>";
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
   }
   function loadMuseHistory() {
     var box = document.getElementById("muse-history");
@@ -15374,8 +15327,15 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
         box.appendChild(d);
       });
       box.scrollTop = box.scrollHeight;
+    }, function (err) {
+      box.innerHTML = "<p>couldn't load your commands — reopen muse to try again.</p>";
     });
   }
+  /* refresh the list while the muse screen is open, so results show up */
+  setInterval(function () {
+    var sc = document.getElementById("muse-screen");
+    if (sc && sc.className.indexOf("hidden") === -1) { loadMuseHistory(); }
+  }, 20000);
   /* ---------- apply to be a mod (MH applications) ---------- */
   document.getElementById("apps-mhapply-btn").onclick = function () { enterMhApply(); };
   document.getElementById("mhapply-back-btn").onclick = function () { showScreen("apps-screen"); };
@@ -15533,7 +15493,10 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       });
     });
   };
-  /* ---------- MH application review (founder only) ---------- */
+  /* ---------- MH application review (founder only): one at a time ---------- */
+  var mhReviewList = [];
+  var mhReviewIdx = 0;
+  var MH_DENY_REASONS = ["not a good fit", "account too new", "looks like an alt", "broke rules before", "other"];
   function loadMhApplications() {
     var box = document.getElementById("dash-mhapps-list");
     box.innerHTML = "<p>loading...</p>";
@@ -15548,58 +15511,93 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
         if (ha && ha.uid) { heal["mhAppsByUser/" + ha.uid + "/" + keys[hi]] = true; }
       }
       if (Object.keys(heal).length) { db.ref().update(heal); }
-      box.innerHTML = "";
-      var pending = keys.filter(function (k) { return v[k].status === "pending"; });
-      if (!pending.length) { box.innerHTML = "<p>no pending applications</p>"; return; }
-      pending.forEach(function (k) {
-        var a = v[k];
-        var div = document.createElement("div");
-        div.style.border = "1px solid #ccc";
-        div.style.borderRadius = "8px";
-        div.style.padding = "8px";
-        div.style.marginBottom = "8px";
-        div.innerHTML = "<p><b>" + escapeHtml(a.name || "?") + "</b> (xp: " + (a.xp || 0) + ", age: " + (a.accountAgeDays || 0) + "d, bans: " + (a.pastBans || 0) + ")<br>" +
-          "<span style='font-size:0.9em;'>" + escapeHtml(a.reason || "") + "</span><br>" +
-          "<span style='font-size:0.8em;color:#666;'>" + new Date(a.at || 0).toLocaleString() + "</span></p>";
-        var ap = document.createElement("button");
-        ap.className = "mini secondary";
-        ap.textContent = "approve";
-        ap.style.marginRight = "8px";
-        ap.onclick = (function (appId, app) {
-          return function () {
-            askConfirm("Approve " + (app.name || "?") + " as mod helper?", function () {
-              var updates = {};
-              updates["helpers/" + app.uid] = { name: app.name, at: Date.now(), by: FOUNDER_UID };
-              updates["mhApplications/" + appId + "/status"] = "approved";
-              updates["mhApplications/" + appId + "/reviewedBy"] = FOUNDER_UID;
-              updates["mhApplications/" + appId + "/reviewedAt"] = Date.now();
-              updates["mhDecisions/" + app.uid + "/" + appId] = { approved: true, at: Date.now(), seen: false };
-              db.ref().update(updates, function () { loadMhApplications(); loadDashHelpers(); });
-            });
-          };
-        })(k, a);
-        var rj = document.createElement("button");
-        rj.className = "mini secondary";
-        rj.textContent = "reject";
-        rj.onclick = (function (appId, app) {
-          return function () {
-            askConfirm("Reject " + (app.name || "?") + "'s application?", function () {
-              var updates = {};
-              updates["mhApplications/" + appId + "/status"] = "rejected";
-              updates["mhApplications/" + appId + "/reviewedBy"] = FOUNDER_UID;
-              updates["mhApplications/" + appId + "/reviewedAt"] = Date.now();
-              updates["mhDecisions/" + app.uid + "/" + appId] = { approved: false, at: Date.now(), seen: false };
-              db.ref().update(updates, function () { loadMhApplications(); });
-            });
-          };
-        })(k, a);
-        div.appendChild(ap);
-        div.appendChild(rj);
-        box.appendChild(div);
-      });
+      mhReviewList = keys.filter(function (k) { return v[k].status === "pending"; }).map(function (k) { return { id: k, app: v[k] }; });
+      mhReviewIdx = 0;
+      renderMhReviewCard();
     }, function (err) {
       box.innerHTML = "<p>couldn't load applications: " + (err.code || err.message || err) + "</p>";
     });
+  }
+  function renderMhReviewCard() {
+    var box = document.getElementById("dash-mhapps-list");
+    if (!box) { return; }
+    box.innerHTML = "";
+    if (!mhReviewList.length) { box.innerHTML = "<p>no pending applications</p>"; return; }
+    if (mhReviewIdx >= mhReviewList.length) { box.innerHTML = "<p>all caught up! no more pending applications.</p>"; return; }
+    var item = mhReviewList[mhReviewIdx];
+    var a = item.app;
+    var count = document.createElement("p");
+    count.textContent = "application " + (mhReviewIdx + 1) + " of " + mhReviewList.length;
+    count.style.fontSize = "15px";
+    box.appendChild(count);
+    var div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.borderRadius = "8px";
+    div.style.padding = "12px";
+    div.style.marginBottom = "12px";
+    div.style.textAlign = "center";
+    div.innerHTML = "<p style='font-size:22px'><b>" + escapeHtml(a.name || "?") + "</b></p>" +
+      "<p>xp: " + (a.xp || 0) + " &bull; account age: " + (a.accountAgeDays || 0) + " days &bull; past bans: " + (a.pastBans || 0) + "</p>" +
+      "<p style='font-size:0.95em;'>" + escapeHtml(a.reason || "") + "</p>" +
+      "<p style='font-size:0.85em;color:#666;'>" + new Date(a.at || 0).toLocaleString() + "</p>";
+    box.appendChild(div);
+    var btnRow = document.createElement("div");
+    btnRow.style.display = "flex";
+    btnRow.style.gap = "8px";
+    var ap = document.createElement("button");
+    ap.textContent = "approve";
+    ap.style.fontSize = "22px";
+    ap.style.padding = "14px 10px";
+    ap.style.flex = "1 1 0";
+    ap.onclick = function () {
+      askConfirm("Approve " + (a.name || "?") + " as mod helper?", function () {
+        var updates = {};
+        updates["helpers/" + a.uid] = { name: a.name, at: Date.now(), by: FOUNDER_UID };
+        updates["mhApplications/" + item.id + "/status"] = "approved";
+        updates["mhApplications/" + item.id + "/reviewedBy"] = FOUNDER_UID;
+        updates["mhApplications/" + item.id + "/reviewedAt"] = Date.now();
+        updates["mhDecisions/" + a.uid + "/" + item.id] = { approved: true, at: Date.now(), seen: false };
+        db.ref().update(updates, function () { mhReviewIdx++; renderMhReviewCard(); loadDashHelpers(); });
+      });
+    };
+    var rj = document.createElement("button");
+    rj.className = "secondary";
+    rj.textContent = "deny";
+    rj.style.fontSize = "22px";
+    rj.style.padding = "14px 10px";
+    rj.style.flex = "1 1 0";
+    rj.onclick = function () { renderMhDenyReasons(item, a); };
+    btnRow.appendChild(ap);
+    btnRow.appendChild(rj);
+    box.appendChild(btnRow);
+  }
+  function renderMhDenyReasons(item, a) {
+    var box = document.getElementById("dash-mhapps-list");
+    box.innerHTML = "";
+    var t = document.createElement("p");
+    t.innerHTML = "Why deny <b>" + escapeHtml(a.name || "?") + "</b>?";
+    box.appendChild(t);
+    MH_DENY_REASONS.forEach(function (reason) {
+      var b = document.createElement("button");
+      b.className = "secondary";
+      b.textContent = reason;
+      b.onclick = function () { mhDenyApp(item, a, reason); };
+      box.appendChild(b);
+    });
+    var back = document.createElement("button");
+    back.className = "secondary";
+    back.textContent = "back";
+    back.onclick = function () { renderMhReviewCard(); };
+    box.appendChild(back);
+  }
+  function mhDenyApp(item, a, reason) {
+    var updates = {};
+    updates["mhApplications/" + item.id + "/status"] = "rejected";
+    updates["mhApplications/" + item.id + "/denyReason"] = reason;
+    updates["mhApplications/" + item.id + "/reviewedBy"] = FOUNDER_UID;
+    updates["mhApplications/" + item.id + "/reviewedAt"] = Date.now();
+    updates["mhDecisions/" + a.uid + "/" + item.id] = { approved: false, reason: reason, at: Date.now(), seen: false };
+    db.ref().update(updates, function () { mhReviewIdx++; renderMhReviewCard(); });
   }
   /* ---------- check MH decisions on sign-in ---------- */
   function checkMhDecisions() {
@@ -16471,7 +16469,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     document.getElementById("event-main").className = "";
     renderEventTeamLine();
     renderEventDoors();
-    loadEventBoard();
+    renderEventBoardButton();
   }
   function renderEventTeamLine() {
     var el = document.getElementById("event-team-line");
@@ -16562,7 +16560,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     });
     if (myEventTeam) {
       db.ref("eventTeamCandy/" + myEventTeam).transaction(function (c) { return (c || 0) + candy; }, function () {
-        loadEventBoard();
+        refreshEventBoardPopup();
       });
     }
     var r = document.getElementById("event-result");
@@ -16610,15 +16608,43 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     }
     modal.className = "";
   }
-  function loadEventBoard() {
-    var tabs = document.getElementsByClassName("eb-tab");
+  function renderEventBoardButton() {
+    var tabs = document.getElementById("event-board-tabs");
+    if (tabs) { tabs.className = "hidden"; }
+    var list = document.getElementById("event-board-list");
+    if (!list) { return; }
+    list.innerHTML = "";
+    var b = document.createElement("button");
+    b.className = "mini secondary";
+    b.textContent = "\uD83C\uDFC6 event leaderboard";
+    b.onclick = function () { openEventBoardPopup(); };
+    list.appendChild(b);
+  }
+  function openEventBoardPopup() {
+    boardPopupKind = "event";
+    openBoardPopup("october event leaderboard");
+    var tabsBox = document.getElementById("board-popup-tabs");
+    [["teams", "teams"], ["candy", "candy"]].forEach(function (pair) {
+      var t = document.createElement("button");
+      t.className = "mini secondary eb-tab";
+      t.setAttribute("data-eb", pair[0]);
+      t.textContent = pair[1];
+      tabsBox.appendChild(t);
+    });
+    loadEventBoard(document.getElementById("board-popup-list"), tabsBox);
+  }
+  function refreshEventBoardPopup() {
+    if (boardPopupKind === "event" && document.getElementById("board-popup").className.indexOf("hidden") === -1) { openEventBoardPopup(); }
+  }
+  function loadEventBoard(listEl, tabsBox) {
+    var tabs = tabsBox ? tabsBox.getElementsByTagName("button") : document.getElementsByClassName("eb-tab");
     for (var i = 0; i < tabs.length; i++) {
       (function (t) {
         t.className = "mini secondary eb-tab" + (t.getAttribute("data-eb") === eventTab ? " on" : "");
-        t.onclick = function () { eventTab = t.getAttribute("data-eb"); loadEventBoard(); };
+        t.onclick = function () { eventTab = t.getAttribute("data-eb"); loadEventBoard(listEl, tabsBox); };
       })(tabs[i]);
     }
-    var list = document.getElementById("event-board-list");
+    var list = listEl || document.getElementById("event-board-list");
     if (!list) { return; }
     list.innerHTML = "<p>loading...</p>";
     if (eventTab === "teams") {
