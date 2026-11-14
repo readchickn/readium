@@ -1404,7 +1404,7 @@
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
 <h2>nov 14, 2026</h2>
-    <p><b>november event is LIVE</b> — pick a team (the acorns, the leaves, the pilgrams, or the turkeys), buy cooking stations for corn, mashed potatoes, stuffing, cranberry sauce, and pumpkin pie, and tap your turkey to collect pumpkin dollars. runs nov 16–30, with a team leaderboard and a gratitude wall.</p>
+    <p><b>november event is LIVE</b> — pick a team (the acorns, the leaves, the pilgrams, or the turkeys), buy cooking stations for corn, mashed potatoes, stuffing, cranberry sauce, and pumpkin pie, and tap your turkey to collect pumpkin dollars. runs nov 14–30, with a team leaderboard and a gratitude wall.</p>
 <h2>nov 13, 2026</h2>
     <p><b>console warning</b> — if you open the browser console now, it warns you never to paste code there. pasted code runs as your account, so anyone telling you to paste something is trying to hack you. readium staff will never ask you to paste code.</p>
     <p><b>deny is instant now</b> — in the account review tile, tapping deny bans the account right away, with no confirmation popup first. same for denying a ban appeal.</p>
@@ -17154,7 +17154,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   }
   document.getElementById("event-home-btn").onclick = function () { stopEventCountdown(); goHome(); };
   /* ================= NOVEMBER EVENT ================= */
-  var FEAST_START = new Date(2026, 10, 16, 0, 0, 0).getTime();
+  var FEAST_START = new Date(2026, 10, 14, 0, 0, 0).getTime(); /* moved up from Nov 16 at Mia's request, 2026-11-14 */
   var FEAST_END = new Date(2026, 11, 1, 0, 0, 0).getTime(); /* midnight ending Nov 30 */
   var FEAST_TEAMS = ["acorns", "leaves", "pilgrams", "turkeys"];
   var FEAST_TEAM_NAMES = { acorns: "the acorns", leaves: "the leaves", pilgrams: "the pilgrams", turkeys: "the turkeys" };
