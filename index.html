@@ -1333,6 +1333,10 @@
   <h1>changelog</h1>
   <div style="margin-bottom:10px;"><button id="log-back-btn-top" class="secondary">back</button></div>
   <div id="log-entries">
+<h2>nov 13, 2026</h2>
+    <p><b>console warning</b> — if you open the browser console now, it warns you never to paste code there. pasted code runs as your account, so anyone telling you to paste something is trying to hack you. readium staff will never ask you to paste code.</p>
+    <p><b>deny is instant now</b> — in the account review tile, tapping deny bans the account right away, with no confirmation popup first. same for denying a ban appeal.</p>
+    <p><b>muse commands are private now</b> — only the founders can read the muse commands or mark them done. before, any logged-in user could read them.</p>
 <h2>nov 10, 2026</h2>
     <p><b>see who's following you</b> — your profile now has a followers list under the people you follow, so you can see who's following you. tapping someone's profile also shows how many followers they have.</p>
     <p><b>account review</b> — the mod dashboard has a new account review tile. mods can go through every account one at a time, see their bio and join date, and accept, deny, or flag them. denied accounts are banned, and flagged ones go in their own list to look at later.</p>
@@ -1757,6 +1761,14 @@
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.database();
+
+  /* ---------- browser-console warning: pasted code runs as your account (self-XSS) ---------- */
+  try {
+    if (window.console && window.console.log) {
+      console.log("%cSTOP!", "color:red;font-size:40px;font-weight:bold;");
+      console.log("%cIf someone told you to paste code here, it is a scam. Anything pasted into this console runs as your account and can delete your stuff, ban people, and spend your XP. Readium staff will never ask you to paste code here.", "font-size:16px;");
+    }
+  } catch (e) {}
 
   var messagesRef = null;
   var roomListRef = null;
@@ -15816,9 +15828,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     den.textContent = "deny";
     den.style.fontSize = "22px"; den.style.padding = "14px 10px"; den.style.flex = "1 1 0";
     den.onclick = function () {
-      askConfirm("Deny " + ((rec && rec.name) || "this account") + "? They will be banned.", function () {
-        reviewDecide(uid, rec, "denied", true);
-      });
+      reviewDecide(uid, rec, "denied", true);
     };
     var flg = document.createElement("button");
     flg.className = "secondary";
@@ -15929,21 +15939,19 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       dn.textContent = "deny (auto-ban)";
       dn.style.fontSize = "18px"; dn.style.padding = "12px 10px"; dn.style.flex = "1 1 0";
       dn.onclick = function () {
-        askConfirm("Deny this appeal? " + (a.name || "This user") + " will stay banned (forever).", function () {
-          var name = a.name || rec.name || "user";
-          var updates = {};
-          updates["appeals/" + uid + "/status"] = "denied";
-          updates["appeals/" + uid + "/reviewedBy"] = displayName();
-          updates["appeals/" + uid + "/reviewedAt"] = Date.now();
-          updates["bans/" + uid] = { name: name, at: Date.now(), by: displayName(), reason: "appeal denied" };
-          db.ref().update(updates, function () {
-            zeroXp(uid);
-            wipeBannedContent(uid);
-            reviewData.appeals[uid].status = "denied";
-            reviewData.bans[uid] = updates["bans/" + uid];
-            renderReviewTab();
-            flashNotice(name + " stays banned.");
-          });
+        var name = a.name || rec.name || "user";
+        var updates = {};
+        updates["appeals/" + uid + "/status"] = "denied";
+        updates["appeals/" + uid + "/reviewedBy"] = displayName();
+        updates["appeals/" + uid + "/reviewedAt"] = Date.now();
+        updates["bans/" + uid] = { name: name, at: Date.now(), by: displayName(), reason: "appeal denied" };
+        db.ref().update(updates, function () {
+          zeroXp(uid);
+          wipeBannedContent(uid);
+          reviewData.appeals[uid].status = "denied";
+          reviewData.bans[uid] = updates["bans/" + uid];
+          renderReviewTab();
+          flashNotice(name + " stays banned.");
         });
       };
       btnRow.appendChild(ap); btnRow.appendChild(dn);
@@ -15970,7 +15978,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     });
   }
   function escapeHtml(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
   /* ---------- chatbot (for everyone) ---------- */
