@@ -616,7 +616,6 @@
   <p class="subtext" id="home-tagline">October event is LIVE!!! -chickn</p>
   <button id="tagline-edit-btn" class="mini secondary hidden">edit tagline</button>
   <button id="messages-btn">messages <span class="dm-dot dot hidden"></span></button>
-  <button id="event-btn" class="event-btn">october event</button>
   <button id="feast-btn" class="feast-btn">november event</button>
   <button id="games-btn" class="secondary">games</button>
   <button id="hood-btn" class="secondary">neighborhood</button>
@@ -2850,7 +2849,6 @@
     { id: "settings", label: "settings", fn: "enterSettings" },
     { id: "chatbot", label: "assistant", fn: "enterChatbot" },
     { id: "games", label: "games", fn: "enterGames" },
-    { id: "event", label: "october event", fn: "enterEvent" },
     { id: "feast", label: "november event", fn: "enterFeast" },
     { id: "hood", label: "neighborhood", fn: "enterHood" }
   ];
@@ -17155,7 +17153,6 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     }
   }
   document.getElementById("event-home-btn").onclick = function () { stopEventCountdown(); goHome(); };
-  document.getElementById("event-btn").onclick = function () { enterEvent(); };
   /* ================= NOVEMBER EVENT ================= */
   var FEAST_START = new Date(2026, 10, 16, 0, 0, 0).getTime();
   var FEAST_END = new Date(2026, 11, 1, 0, 0, 0).getTime(); /* midnight ending Nov 30 */
