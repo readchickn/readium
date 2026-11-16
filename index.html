@@ -18043,11 +18043,6 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       (function (dish) {
         var ready = document.getElementById("feast-ready-" + dish.key);
         if (ready) { ready.textContent = "ready: +" + feastAccrued(dish, myFeastStations, Date.now()) + " pumpkin dollars — tap your turkey to collect!"; }
-        var buyBtn = document.getElementById("feast-buy-" + dish.key);
-        if (buyBtn) {
-          var owned = (myFeastStations && myFeastStations[dish.key]) || 0;
-          buyBtn.disabled = !feastLive() || myFeastPumpkins < feastDishCost(dish, owned);
-        }
       })(FEAST_DISHES[i]);
     }
   }
@@ -18177,7 +18172,6 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
         var buy = document.createElement("button");
         buy.id = "feast-buy-" + dish.key;
         buy.textContent = "buy — " + cost + " pumpkin dollars";
-        buy.disabled = !feastLive() || myFeastPumpkins < cost;
         buy.onclick = function () { buyFeastDish(dish.key); };
         card.appendChild(appIm); card.appendChild(dishIm); card.appendChild(h); card.appendChild(ap);
         card.appendChild(own); card.appendChild(cook); card.appendChild(ready); card.appendChild(buy);
