@@ -557,6 +557,16 @@
   #feast-screen .team-row.me, #feast-screen .board-row.me { background: #333; }
   #feast-grat-feed .req-row { background: #fff; color: #111; padding: 6px; margin: 6px 0; }
   #feast-grat-feed .req-row p { color: #111; }
+  #feast-wheel-box { text-align: center; margin: 14px 0; padding: 10px 6px; border: 3px solid #fff; background: #2a1a05; }
+  #feast-wheel-box h2 { margin: 4px 0; }
+  #feast-wheel-streak { color: #fff; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; font-size: 15px; margin: 4px 0; }
+  #feast-wheel-wrap { position: relative; width: 180px; height: 180px; margin: 10px auto; }
+  #feast-wheel { width: 180px; height: 180px; border-radius: 50%; border: 4px solid #111; box-sizing: border-box; position: relative; background: conic-gradient(from -22.5deg, #e74c3c 0deg 45deg, #f39c12 45deg 90deg, #f1c40f 90deg 135deg, #2ecc71 135deg 180deg, #3498db 180deg 225deg, #9b59b6 225deg 270deg, #e67e22 270deg 315deg, #e91e63 315deg 360deg); transition: transform 2.6s cubic-bezier(0.12, 0.8, 0.08, 1); }
+  #feast-wheel-pointer { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 22px; color: #fff; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000; z-index: 2; }
+  .feast-wheel-label { position: absolute; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; transform: translate(-50%, -50%); }
+  #feast-spin-btn { font-size: 18px; padding: 8px 18px; }
+  #feast-spin-btn:disabled { opacity: 0.35; }
+  #feast-wheel-msg { min-height: 1.6em; font-size: 15px; color: #fff; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000; text-align: center; margin: 8px 0; }
   .feast-btn {
     background: #000 url("data:image/png;base64,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");
     color: #fff !important;
@@ -828,6 +838,16 @@
     <div id="feast-stations"></div>
     <p id="feast-stations-note"></p>
     <p id="feast-result"></p>
+    <div id="feast-wheel-box">
+      <h2>daily spin</h2>
+      <p id="feast-wheel-streak">your streak: 0 days — spin today to start one!</p>
+      <div id="feast-wheel-wrap">
+        <div id="feast-wheel"></div>
+        <div id="feast-wheel-pointer">▼</div>
+      </div>
+      <button id="feast-spin-btn">spin the wheel!</button>
+      <p id="feast-wheel-msg"></p>
+    </div>
     <div id="feast-board-list"></div>
     <h2>gratitude wall</h2>
     <p id="feast-grat-note" style="font-size:16px">one post every 10 minutes. say something you're thankful for!</p>
@@ -17967,6 +17987,12 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   var feastTab = "teams";
   var feastTickTimer = null;
   var feastGratFeedRef = null;
+  var FEAST_WHEEL_PRIZES = [50, 100, 100, 200, 200, 300, 500, 1000];
+  var myFeastLastSpin = null;
+  var myFeastSpinStreak = 0;
+  var feastSpinLoaded = false;
+  var feastWheelRot = 0;
+  var feastSpinning = false;
   function feastDishByKey(key) {
     for (var i = 0; i < FEAST_DISHES.length; i++) { if (FEAST_DISHES[i].key === key) { return FEAST_DISHES[i]; } }
     return null;
@@ -18073,6 +18099,12 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     });
     db.ref("feastStations/" + uid).once("value", function (snap) {
       myFeastStations = snap.val() || {};
+      if (!feastSpinLoaded) {
+        if (typeof myFeastStations.lastSpin === "string") { myFeastLastSpin = myFeastStations.lastSpin; }
+        if (typeof myFeastStations.spinStreak === "number") { myFeastSpinStreak = myFeastStations.spinStreak; }
+        feastSpinLoaded = true;
+      }
+      renderFeastWheel();
     });
   }
   document.getElementById("feast-join-btn").onclick = function () {
@@ -18091,6 +18123,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     document.getElementById("feast-main").className = "";
     renderFeastTeamLine();
     renderFeastStations();
+    renderFeastWheel();
     renderFeastBoardButton();
     enterFeastGrat();
   }
@@ -18205,6 +18238,99 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
         });
       });
     });
+  }
+  function feastSpinDay(d) {
+    var y = d.getFullYear();
+    var m = ("0" + (d.getMonth() + 1)).slice(-2);
+    var day = ("0" + d.getDate()).slice(-2);
+    return y + "-" + m + "-" + day;
+  }
+  function buildFeastWheelLabels() {
+    var wheel = document.getElementById("feast-wheel");
+    if (!wheel || wheel.getAttribute("data-built")) { return; }
+    wheel.setAttribute("data-built", "1");
+    for (var i = 0; i < FEAST_WHEEL_PRIZES.length; i++) {
+      var ang = i * 45 * Math.PI / 180;
+      var x = 90 + 62 * Math.sin(ang);
+      var y = 90 - 62 * Math.cos(ang);
+      var lab = document.createElement("span");
+      lab.className = "feast-wheel-label";
+      lab.textContent = FEAST_WHEEL_PRIZES[i];
+      lab.style.left = Math.round(x) + "px";
+      lab.style.top = Math.round(y) + "px";
+      wheel.appendChild(lab);
+    }
+  }
+  function renderFeastWheel() {
+    var box = document.getElementById("feast-wheel-box");
+    if (!box) { return; }
+    buildFeastWheelLabels();
+    var btn = document.getElementById("feast-spin-btn");
+    if (btn && !btn.getAttribute("data-wired")) {
+      btn.setAttribute("data-wired", "1");
+      btn.onclick = spinFeastWheel;
+    }
+    var streakEl = document.getElementById("feast-wheel-streak");
+    if (streakEl) {
+      if (myFeastSpinStreak > 0) {
+        streakEl.textContent = "your streak: " + myFeastSpinStreak + " day" + (myFeastSpinStreak === 1 ? "" : "s") + " — spin every day to keep it going!";
+      } else {
+        streakEl.textContent = "your streak: 0 days — spin today to start one!";
+      }
+    }
+    if (btn) {
+      var today = feastSpinDay(new Date());
+      var spun = (myFeastLastSpin === today);
+      btn.disabled = feastSpinning || !feastLive() || spun;
+      btn.textContent = spun ? "come back tomorrow!" : "spin the wheel!";
+    }
+  }
+  function spinFeastWheel() {
+    var uid = myUid();
+    if (!uid || !myFeastTeam) { return; }
+    if (feastSpinning) { return; }
+    if (!feastLive()) { feastMsg("the november event is over!"); return; }
+    var today = feastSpinDay(new Date());
+    if (myFeastLastSpin === today) { feastMsg("you already spun today — come back tomorrow!"); renderFeastWheel(); return; }
+    var win = Math.floor(Math.random() * FEAST_WHEEL_PRIZES.length);
+    var prize = FEAST_WHEEL_PRIZES[win];
+    var yesterday = feastSpinDay(new Date(Date.now() - 86400000));
+    var newStreak = (myFeastLastSpin === yesterday) ? (myFeastSpinStreak + 1) : 1;
+    var bonus = (newStreak % 7 === 0) ? 500 : 0;
+    var total = prize + bonus;
+    var up = { lastSpin: today, spinStreak: newStreak };
+    db.ref("feastStations/" + uid).update(up);
+    myFeastStations = myFeastStations || {};
+    myFeastStations.lastSpin = today;
+    myFeastStations.spinStreak = newStreak;
+    myFeastLastSpin = today;
+    myFeastSpinStreak = newStreak;
+    feastSpinLoaded = true;
+    db.ref("feastPumpkins/" + uid).transaction(function (c) { return (c || 0) + total; }, function () {
+      db.ref("feastPumpkins/" + uid).once("value", function (s) {
+        myFeastPumpkins = (typeof s.val() === "number") ? s.val() : 0;
+        var pl = document.getElementById("feast-pumpkin-line");
+        if (pl) { pl.textContent = "your pumpkin dollars: " + myFeastPumpkins; }
+      });
+    });
+    db.ref("feastTeamPumpkins/" + myFeastTeam).transaction(function (c) { return (c || 0) + total; }, function () { refreshFeastBoardPopup(); });
+    feastSpinning = true;
+    renderFeastWheel();
+    var wheel = document.getElementById("feast-wheel");
+    var cur = ((win * 45 + feastWheelRot) % 360 + 360) % 360;
+    var delta = (360 - cur) % 360;
+    feastWheelRot = feastWheelRot + 1800 + delta;
+    if (wheel) { wheel.style.transform = "rotate(" + feastWheelRot + "deg)"; }
+    var msgEl = document.getElementById("feast-wheel-msg");
+    if (msgEl) { msgEl.textContent = "spinning..."; }
+    setTimeout(function () {
+      feastSpinning = false;
+      var msg = "you won +" + prize + " pumpkin dollars!";
+      if (bonus > 0) { msg += " 7-day streak bonus: +500!"; }
+      if (msgEl) { msgEl.textContent = msg; }
+      feastMsg(msg);
+      renderFeastWheel();
+    }, 2700);
   }
   function renderFeastBoardButton() {
     var list = document.getElementById("feast-board-list");
