@@ -18206,9 +18206,10 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   function buyFeastDish(key) {
     var dish = feastDishByKey(key);
     var uid = myUid();
-    if (!dish || !uid) { return; }
+    if (!dish || !uid) { feastMsg("hmm, that didn't work — try leaving the event screen and coming back."); return; }
     if (!myFeastTeam) { feastMsg("join a team first — tap 'sort me onto a team!'"); return; }
-    if (!feastLive()) { renderFeastStations(); return; }
+    if (!feastLive()) { feastMsg("the november event isn't running right now."); renderFeastStations(); return; }
+    feastMsg("buying a " + dish.name + " station...");
     var owned = (myFeastStations && myFeastStations[key]) || 0;
     var cost = feastDishCost(dish, owned);
     db.ref("feastPumpkins/" + uid).once("value", function (snap) {
@@ -18218,11 +18219,13 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
         if ((c || 0) < cost) { return; }
         return c - cost;
       }, function (err, committed) {
+        if (err) { feastMsg("couldn't finish the purchase — try again."); return; }
         if (!committed) { feastMsg("not enough pumpkin dollars!"); return; }
         var up = {};
         up[key] = owned + 1;
         if (owned === 0) { up[FEAST_LASTKEY[key]] = Date.now(); }
-        db.ref("feastStations/" + uid).update(up, function () {
+        db.ref("feastStations/" + uid).update(up, function (uerr) {
+          if (uerr) { feastMsg("couldn't save the station — try again."); return; }
           myFeastStations = myFeastStations || {};
           myFeastStations[key] = owned + 1;
           if (owned === 0) { myFeastStations[FEAST_LASTKEY[key]] = Date.now(); }
@@ -18231,6 +18234,8 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
           renderFeastStations();
         });
       });
+    }, function (rerr) {
+      feastMsg("couldn't reach the server — check your connection and try again.");
     });
   }
   function feastSpinDay(d) {
