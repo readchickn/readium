@@ -17963,7 +17963,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   };
   var myFeastTeam = null;
   var myFeastPumpkins = 0;
-  var myFeastStations = null;
+  var myFeastStations = {};
   var feastTab = "teams";
   var feastTickTimer = null;
   var feastGratFeedRef = null;
@@ -18013,7 +18013,6 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       else if (now >= FEAST_END) { el.textContent = "event over! thanks for playing!"; }
       else { el.textContent = "event ends in " + feastFmtLeft(FEAST_END - now); }
     }
-    if (!myFeastStations) { return; }
     for (var i = 0; i < FEAST_DISHES.length; i++) {
       (function (dish) {
         var ready = document.getElementById("feast-ready-" + dish.key);
@@ -18180,7 +18179,8 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   function buyFeastDish(key) {
     var dish = feastDishByKey(key);
     var uid = myUid();
-    if (!dish || !uid || !myFeastTeam) { return; }
+    if (!dish || !uid) { return; }
+    if (!myFeastTeam) { feastMsg("join a team first — tap 'sort me onto a team!'"); return; }
     if (!feastLive()) { renderFeastStations(); return; }
     var owned = (myFeastStations && myFeastStations[key]) || 0;
     var cost = feastDishCost(dish, owned);
