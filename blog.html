@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mia's blog</title>
+<style>
+  body { margin: 0; background: #ffffff; color: #111111; font-family: Georgia, serif; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 12px; box-sizing: border-box; }
+  h1 { font-size: 28px; margin: 8px 0 4px 0; }
+  h2 { font-size: 22px; margin: 10px 0; }
+  p { font-size: 16px; line-height: 1.5; }
+  a { color: #111111; }
+  .topbar { font-size: 15px; margin: 4px 0 10px 0; }
+  .hidden { display: none; }
+  /* tile grid */
+  .tiles { display: flex; flex-wrap: wrap; gap: 12px; }
+  .tile { width: 200px; border: 3px solid #111111; background: #ffffff; cursor: pointer; box-sizing: border-box; }
+  .tile img { width: 100%; height: 250px; object-fit: cover; object-position: top; display: block; border-bottom: 3px solid #111111; }
+  .tile .t { font-size: 18px; font-weight: bold; padding: 8px; text-align: center; }
+  /* post view: arrows, not buttons */
+  .backlink { font-size: 20px; cursor: pointer; display: inline-block; margin: 4px 0 8px 0; }
+  .pagetitle { font-size: 24px; font-weight: bold; margin: 4px 0; }
+  .pagecount { font-size: 15px; color: #444444; margin: 2px 0 8px 0; }
+  .viewer { display: flex; align-items: center; gap: 6px; }
+  .viewer img { flex: 1 1 auto; max-width: 620px; width: 100%; height: auto; display: block; border: 3px solid #111111; box-sizing: border-box; }
+  .arrow { flex: 0 0 auto; font-size: 48px; line-height: 1; cursor: pointer; color: #111111; user-select: none; padding: 0 2px; }
+  .arrow.off { color: #cccccc; cursor: default; }
+  .hint { font-size: 14px; color: #444444; text-align: center; margin: 8px 0 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>mia's blog</h1>
+  <p class="topbar"><a href="index.html">&larr; back to readium beta</a></p>
+
+  <div id="blog-tiles">
+    <div class="tiles" id="blog-tile-list"></div>
+  </div>
+
+  <div id="blog-post" class="hidden">
+    <span class="backlink" id="blog-back">&larr; all posts</span>
+    <div class="pagetitle" id="blog-post-title"></div>
+    <div class="pagecount" id="blog-page-count"></div>
+    <div class="viewer">
+      <span class="arrow" id="blog-prev">&larr;</span>
+      <img id="blog-page-img" alt="blog post page">
+      <span class="arrow" id="blog-next">&rarr;</span>
+    </div>
+    <p class="hint">tap the arrows to flip pages</p>
+  </div>
+</div>
+
+<script>
+var POSTS = [{"title": "About Me!!", "cover": "blog/about-me-1.jpg", "pages": ["blog/about-me-1.jpg", "blog/about-me-2.jpg", "blog/about-me-3.jpg", "blog/about-me-4.jpg", "blog/about-me-5.jpg", "blog/about-me-6.jpg", "blog/about-me-7.jpg"]}];
+var curPost = -1;
+var curPage = 0;
+
+function showTiles() {
+  curPost = -1;
+  document.getElementById("blog-tiles").className = "";
+  document.getElementById("blog-post").className = "hidden";
+}
+function openPost(i) {
+  curPost = i;
+  curPage = 0;
+  document.getElementById("blog-tiles").className = "hidden";
+  document.getElementById("blog-post").className = "";
+  renderPage();
+}
+function renderPage() {
+  var post = POSTS[curPost];
+  document.getElementById("blog-post-title").textContent = post.title;
+  document.getElementById("blog-page-count").textContent = "page " + (curPage + 1) + " of " + post.pages.length;
+  document.getElementById("blog-page-img").src = post.pages[curPage];
+  document.getElementById("blog-page-img").alt = post.title + " — page " + (curPage + 1);
+  var prev = document.getElementById("blog-prev");
+  var next = document.getElementById("blog-next");
+  prev.className = "arrow" + (curPage <= 0 ? " off" : "");
+  next.className = "arrow" + (curPage >= post.pages.length - 1 ? " off" : "");
+}
+function goPrev() {
+  if (curPost < 0 || curPage <= 0) { return; }
+  curPage--;
+  renderPage();
+}
+function goNext() {
+  if (curPost < 0) { return; }
+  var post = POSTS[curPost];
+  if (curPage >= post.pages.length - 1) { return; }
+  curPage++;
+  renderPage();
+}
+document.getElementById("blog-prev").onclick = goPrev;
+document.getElementById("blog-next").onclick = goNext;
+document.getElementById("blog-back").onclick = showTiles;
+document.addEventListener("keydown", function (e) {
+  if (curPost < 0) { return; }
+  if (e.key === "ArrowLeft") { goPrev(); }
+  if (e.key === "ArrowRight") { goNext(); }
+});
+
+// build the tiles
+(function () {
+  var list = document.getElementById("blog-tile-list");
+  for (var i = 0; i < POSTS.length; i++) {
+    (function (idx) {
+      var post = POSTS[idx];
+      var tile = document.createElement("div");
+      tile.className = "tile";
+      var img = document.createElement("img");
+      img.src = post.cover;
+      img.alt = post.title;
+      var t = document.createElement("div");
+      t.className = "t";
+      t.textContent = post.title;
+      tile.appendChild(img);
+      tile.appendChild(t);
+      tile.onclick = function () { openPost(idx); };
+      list.appendChild(tile);
+    })(i);
+  }
+})();
+</script>
+</body>
+</html>
