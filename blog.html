@@ -6,7 +6,8 @@
 <title>chickn's blog</title>
 <style>
   body { margin: 0; background: #ffffff; color: #111111; font-family: Georgia, serif; }
-  .wrap { max-width: 680px; margin: 0 auto; padding: 12px; box-sizing: border-box; }
+  html, body { overflow-x: hidden; }
+  .wrap { width: 100%; max-width: 680px; margin: 0 auto; padding: 12px; box-sizing: border-box; }
   h1 { font-size: 28px; margin: 8px 0 4px 0; }
   h2 { font-size: 22px; margin: 10px 0; }
   p { font-size: 16px; line-height: 1.5; }
@@ -22,9 +23,9 @@
   .backlink { font-size: 20px; cursor: pointer; display: inline-block; margin: 4px 0 8px 0; }
   .pagetitle { font-size: 24px; font-weight: bold; margin: 4px 0; }
   .pagecount { font-size: 15px; color: #444444; margin: 2px 0 8px 0; }
-  .viewer { display: flex; align-items: center; gap: 6px; }
-  .viewer img { flex: 1 1 auto; max-width: 620px; width: 100%; height: auto; display: block; border: 3px solid #111111; box-sizing: border-box; }
-  .arrow { flex: 0 0 auto; font-size: 48px; line-height: 1; cursor: pointer; color: #111111; user-select: none; padding: 0 2px; }
+  .viewer { display: flex; align-items: center; gap: 4px; width: 100%; box-sizing: border-box; }
+  .viewer img { flex: 1 1 auto; min-width: 0; max-width: 620px; width: 100%; height: auto; display: block; border: 3px solid #111111; box-sizing: border-box; }
+  .arrow { flex: 0 0 auto; font-size: 36px; line-height: 1; cursor: pointer; color: #111111; user-select: none; padding: 0 2px; }
   .arrow.off { color: #cccccc; cursor: default; }
   .hint { font-size: 14px; color: #444444; text-align: center; margin: 8px 0 0 0; }
 </style>
