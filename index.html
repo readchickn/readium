@@ -650,7 +650,7 @@
 <!-- ALL APPS -->
 <div id="apps-screen" class="hidden">
   <h1>all apps</h1>
-  <button id="apps-suggest-btn" class="secondary">suggestions</button><button id="apps-store-btn" class="secondary">store</button><button id="apps-board-btn" class="secondary">leaderboard</button><button id="apps-poll-btn" class="secondary">polls <span id="poll-dot2" class="dot hidden"></span></button><button id="apps-log-btn" class="secondary">changelog</button><button id="apps-settings-btn" class="secondary">settings</button><button id="apps-chatbot-btn" class="secondary">assistant</button><button id="apps-muse-btn" class="secondary hidden">muse</button><button id="apps-mhapply-btn" class="secondary">apply to be a mod!</button><button id="apps-poxel-btn" class="secondary">poxel</button><button id="apps-lifehub-btn" class="secondary">lifestyle</button><button id="apps-pinterest-btn" class="secondary">pinterest</button><button id="apps-flip-btn" class="secondary">flipbook</button><button id="apps-fullscreen-btn" class="secondary">full screen</button><button id="apps-donate-btn" class="secondary">support readium</button><button id="apps-blog-btn" class="secondary">chickn's blog</button><button id="apps-back-btn" class="secondary">back</button>
+  <button id="apps-suggest-btn" class="secondary">suggestions</button><button id="apps-store-btn" class="secondary">store</button><button id="apps-pet-btn" class="secondary">my pet</button><button id="apps-board-btn" class="secondary">leaderboard</button><button id="apps-poll-btn" class="secondary">polls <span id="poll-dot2" class="dot hidden"></span></button><button id="apps-log-btn" class="secondary">changelog</button><button id="apps-settings-btn" class="secondary">settings</button><button id="apps-chatbot-btn" class="secondary">assistant</button><button id="apps-muse-btn" class="secondary hidden">muse</button><button id="apps-mhapply-btn" class="secondary">apply to be a mod!</button><button id="apps-poxel-btn" class="secondary">poxel</button><button id="apps-lifehub-btn" class="secondary">lifestyle</button><button id="apps-pinterest-btn" class="secondary">pinterest</button><button id="apps-flip-btn" class="secondary">flipbook</button><button id="apps-fullscreen-btn" class="secondary">full screen</button><button id="apps-donate-btn" class="secondary">support readium</button><button id="apps-blog-btn" class="secondary">chickn's blog</button><button id="apps-back-btn" class="secondary">back</button>
   <h2 style="font-size:20px;margin-top:16px">kindle sites</h2>
   <p style="font-size:16px">other spots made for kindle browsers:</p>
   <p><a href="https://rekindle.ink" target="_blank" rel="noopener">rekindle</a> — kindle dashboard with apps and games</p>
@@ -1982,6 +1982,11 @@
     <div id="pp-pfp"></div>
     <h2 id="pp-name"></h2>
     <p id="pp-bio"></p>
+    <div id="pp-pet" class="hidden">
+      <img id="pp-pet-img" alt="pet" style="width:64px;height:64px;image-rendering:pixelated;">
+      <p id="pp-pet-name" style="font-size:16px;"></p>
+      <p id="pp-pet-bio" style="font-size:14px;"></p>
+    </div>
     <div id="pp-decor" style="font-size:26px;letter-spacing:6px;"></div>
     <p>birthday: <span id="pp-birthday"></span></p>
     <p>joined: <span id="pp-joined"></span></p>
@@ -7211,6 +7216,35 @@
     var ptd = themeDefFor(rec.theme);
     if (ptd) { pcard.className = ptd.cls; }
     document.getElementById("pp-bio").textContent = rec.bio || "no bio yet";
+    // pet section (2026-11-24): show their pet on the bio, with its name/bio
+    var ppPet = document.getElementById("pp-pet");
+    var ppPetImg = document.getElementById("pp-pet-img");
+    var ppPetName = document.getElementById("pp-pet-name");
+    var ppPetBio = document.getElementById("pp-pet-bio");
+    if (ppPet) { ppPet.className = "hidden"; ppPet.onclick = null; ppPet.style.cursor = ""; ppPet.title = ""; }
+    if (ppPetBio) { ppPetBio.style.display = "none"; }
+    if (rec.pet && PET_ART[rec.pet]) {
+      var petKey = rec.pet;
+      var petUid = uid;
+      ppPetImg.src = petFrameFor(petKey, null);
+      ppPetImg.style.filter = "none";
+      ppPetName.textContent = petCap(petNames[petKey] || petKey);
+      ppPetBio.textContent = "";
+      ppPet.className = "";
+      if (uid === myUid()) {
+        ppPet.style.cursor = "pointer"; ppPet.title = "my pet room";
+        ppPet.onclick = function () { document.getElementById("profile-popup").className = "hidden"; ppUid = null; enterPetRoom(); };
+      }
+      db.ref("users/" + uid + "/petStats/" + petKey).once("value", function (psnap) {
+        if (ppUid !== petUid) { return; }
+        var st = psnap.val() || {};
+        ppPetImg.src = petFrameFor(petKey, st.petPose);
+        ppPetImg.style.filter = petColorFilter(st.petColor);
+        ppPetName.textContent = (st.petName || petCap(petNames[petKey] || petKey)) + " — Lv " + petLevelFor(st.xp || 0);
+        ppPetBio.textContent = st.petBio || "";
+        ppPetBio.style.display = st.petBio ? "" : "none";
+      });
+    }
     db.ref("userSpaces/" + uid + "/decor").once("value", function (dsnap) {
       var darr = dsnap.val();
       document.getElementById("pp-decor").textContent = Array.isArray(darr) ? darr.join(" ") : "";
@@ -18159,6 +18193,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
   document.getElementById("apps-back-btn").onclick = goHome;
   document.getElementById("apps-suggest-btn").onclick = function () { requireAuth(enterSuggest); };
   document.getElementById("apps-store-btn").onclick = function () { requireAuth(enterStore); };
+  document.getElementById("apps-pet-btn").onclick = function () { requireAuth(enterPetScreen); };
   document.getElementById("apps-board-btn").onclick = enterBoard;
   document.getElementById("apps-poll-btn").onclick = function () { enterPolls(); };
   document.getElementById("apps-log-btn").onclick = function () { showScreen("log-screen"); };
