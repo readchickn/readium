@@ -663,6 +663,21 @@
   <p>Support Readium! Donations help keep the site running.</p>
   <p style="font-size:16px">Tap below to support Readium on Ko-fi.</p>
   <button id="donate-btn">donate via Ko-fi</button>
+  <h2>buy with venmo</h2>
+  <p style="font-size:16px">Pay <b>@readium</b> on Venmo, then press "I paid!" below. Mia will confirm it in Venmo and your item will appear.</p>
+  <div id="donate-shop"></div>
+  <div id="donate-claim" class="hidden">
+    <h2 id="donate-claim-title"></h2>
+    <p style="font-size:16px">1. Open Venmo and pay <b>@readium</b> <b id="donate-claim-amount"></b>.</p>
+    <p style="font-size:16px">2. In the Venmo payment note, put: <b id="donate-claim-note"></b></p>
+    <p style="font-size:16px">3. Press "I paid!" below — Mia will confirm it in Venmo and your item will appear.</p>
+    <p style="font-size:15px">your readium username</p>
+    <input id="donate-claim-user" type="text" maxlength="20" autocomplete="off">
+    <p style="font-size:15px">name on the venmo payment (if different — e.g. a parent's name)</p>
+    <input id="donate-claim-venmo" type="text" maxlength="40" autocomplete="off" placeholder="same as above, or leave blank">
+    <button id="donate-paid-btn">I paid!</button>
+    <p id="donate-claim-msg" style="font-size:16px"></p>
+  </div>
   <p id="donate-msg" style="font-size:16px"></p>
   <button id="donate-back-btn" class="secondary">back</button>
 </div>
@@ -787,6 +802,23 @@
       <button id="pet-feed-btn">feed (5 xp)</button>
       <button id="pet-play-btn">play (5 xp)</button>
     </p>
+    <p>
+      <button id="pet-walk-btn">walk (5 xp)</button>
+      <button id="pet-fetch-btn">fetch (2 xp)</button>
+    </p>
+    <p id="pet-shinies" style="font-size:15px">shinies: 0</p>
+    <div id="pet-fetch-row" class="hidden">
+      <p style="font-size:15px">where did your pet hide the ball?</p>
+      <p>
+        <button id="pet-fetch-bush" class="secondary">bush</button>
+        <button id="pet-fetch-box" class="secondary">box</button>
+        <button id="pet-fetch-pond" class="secondary">pond</button>
+      </p>
+    </div>
+    <div id="pet-tricks-wrap">
+      <p style="font-size:15px">tricks — tap one to teach it (10 xp) or see it:</p>
+      <p id="pet-tricks"></p>
+    </div>
     <p id="pet-msg" style="font-size:15px"></p>
   </div>
   <div id="pet-picker-wrap">
@@ -1007,7 +1039,7 @@
 <div id="dash-screen" class="hidden">
   <h1>mod dashboard</h1>
   <div id="dash-tiles">
-    <button class="tile dash-tile" data-sec="dash-sec-stats">stats<small>users, online, rooms</small></button><button class="tile dash-tile" data-sec="dash-sec-find">find user<small>search anyone</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-xp">give xp<small>grant or take xp</small></button><button class="tile dash-tile" data-sec="dash-sec-reports">reports<small>message reports</small></button><button class="tile dash-tile" data-sec="dash-sec-dmreports">DM reports<small>reported DMs</small></button><button class="tile dash-tile" data-sec="dash-sec-bans">banned users<small>ban + banned list</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-mods">moderators<small>add / remove mods</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-helpers">mod helpers<small>add / remove helpers</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-mhapps">applications<small>helper applications</small></button><button id="dash-tile-review" class="tile dash-tile" data-sec="dash-sec-review">account review<small>sort accounts + appeals</small></button>
+    <button class="tile dash-tile" data-sec="dash-sec-stats">stats<small>users, online, rooms</small></button><button class="tile dash-tile" data-sec="dash-sec-find">find user<small>search anyone</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-xp">give xp<small>grant or take xp</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-claims">payment claims<small>venmo "i paid!" claims</small></button><button class="tile dash-tile" data-sec="dash-sec-reports">reports<small>message reports</small></button><button class="tile dash-tile" data-sec="dash-sec-dmreports">DM reports<small>reported DMs</small></button><button class="tile dash-tile" data-sec="dash-sec-bans">banned users<small>ban + banned list</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-mods">moderators<small>add / remove mods</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-helpers">mod helpers<small>add / remove helpers</small></button><button class="tile dash-tile dash-tile-founder" data-sec="dash-sec-mhapps">applications<small>helper applications</small></button><button id="dash-tile-review" class="tile dash-tile" data-sec="dash-sec-review">account review<small>sort accounts + appeals</small></button>
   </div>
   <button id="dash-back-btn" class="secondary hidden">&larr; back to dashboard</button>
   <div id="dash-sec-stats" class="dash-sec hidden">
@@ -1028,6 +1060,11 @@
   <button id="dash-xp-btn" class="secondary">grant xp</button>
   <button id="dash-xp-take-btn" class="secondary">take away xp</button>
   </div>
+  </div>
+  <div id="dash-sec-claims" class="dash-sec hidden">
+  <h2>payment claims</h2>
+  <p style="font-size:15px">People who paid on Venmo (@readium) and pressed "I paid!". Check the payment in the Venmo app — match the username and the name on the payment — then approve to give them the item, or deny.</p>
+  <div id="dash-claims"><p>loading...</p></div>
   </div>
   <div id="dash-sec-reports" class="dash-sec hidden">
   <h2>reports</h2>
@@ -4081,6 +4118,8 @@
       if (isFounder) { mhw.className = ""; loadMhApplications(); }
       else { mhw.className = "hidden"; }
     }
+    // payment claims (founder only)
+    if (isFounder) { loadPaymentClaims(); }
     // tile layout: founder-only tiles hidden for mods/helpers
     var ft = document.getElementsByClassName("dash-tile-founder");
     for (var fi = 0; fi < ft.length; fi++) { ft[fi].style.display = isFounder ? "" : "none"; }
@@ -4197,6 +4236,96 @@
         changeXp(uid, -amt);
         flashNotice("took away " + amt + " xp from " + name);
         nameEl.value = ""; amtEl.value = "";
+      });
+    });
+  }
+  /* ---------- payment claims (founder only, venmo "i paid!") ---------- */
+  function loadPaymentClaims() {
+    var box = document.getElementById("dash-claims");
+    if (!box) { return; }
+    if (!isFounderUid(myUid())) { box.innerHTML = "<p>founders only.</p>"; return; }
+    box.innerHTML = "<p>loading...</p>";
+    db.ref("paymentClaims").orderByChild("at").limitToLast(50).once("value", function (snap) {
+      var val = snap.val() || {};
+      var keys = Object.keys(val);
+      box.innerHTML = "";
+      if (!keys.length) { box.innerHTML = "<p>no claims yet.</p>"; return; }
+      keys.sort(function (a, b) { return (val[b].at || 0) - (val[a].at || 0); });
+      for (var i = 0; i < keys.length; i++) {
+        (function (key) {
+          var c = val[key] || {};
+          var it = payItemById(c.item) || { name: c.item || "?" };
+          var d = document.createElement("div");
+          d.style.border = "3px solid #000";
+          d.style.padding = "10px";
+          d.style.margin = "10px 0";
+          var when = c.at ? new Date(c.at).toLocaleString() : "";
+          var head = document.createElement("p");
+          head.style.fontSize = "16px";
+          head.textContent = it.name + " — $" + (c.amount != null ? c.amount : "?") + " — " + (c.status || "pending") + (when ? " — " + when : "");
+          d.appendChild(head);
+          var who = document.createElement("p");
+          who.style.fontSize = "16px";
+          who.textContent = "readium: " + (c.username || "?") + (c.venmoName ? " — venmo name: " + c.venmoName : " — venmo name: same as username");
+          d.appendChild(who);
+          if ((c.status || "pending") === "pending") {
+            var ap = document.createElement("button");
+            ap.className = "secondary";
+            ap.textContent = "approve — give item";
+            ap.onclick = function () { approveClaim(key); };
+            d.appendChild(ap);
+            var dn = document.createElement("button");
+            dn.className = "secondary";
+            dn.textContent = "deny";
+            dn.onclick = function () { denyClaim(key); };
+            d.appendChild(dn);
+          }
+          box.appendChild(d);
+        })(keys[i]);
+      }
+    });
+  }
+  function grantClaimItem(c, done) {
+    // give the bought item; done(true) on success. XP uses changeXp
+    // (founders can write xp); beta sets users/<uid>/betaAccess.
+    if (c.item === "beta") {
+      db.ref("users/" + c.uid + "/betaAccess").set(true, function (err) { done(!err); });
+    } else if (PAY_XP[c.item]) {
+      changeXp(c.uid, PAY_XP[c.item]);
+      done(true);
+    } else { done(false); }
+  }
+  function approveClaim(key) {
+    if (!isFounderUid(myUid())) { return; }
+    var ref = db.ref("paymentClaims/" + key);
+    ref.once("value", function (snap) {
+      var c = snap.val();
+      if (!c || (c.status || "pending") !== "pending") { flashNotice("that claim is already decided."); loadPaymentClaims(); return; }
+      var it = payItemById(c.item) || { name: c.item || "?" };
+      askConfirm("Approve this claim? " + (c.username || "") + " gets " + it.name + ". Only approve if you saw the Venmo payment.", function () {
+        grantClaimItem(c, function (ok) {
+          if (!ok) { flashNotice("could not give the item — the new rules may not be published yet."); loadPaymentClaims(); return; }
+          ref.update({ status: "approved" }, function (err) {
+            if (err) { flashNotice("item given, but the claim could not be marked approved — try again."); return; }
+            flashNotice("approved — " + it.name + " given to " + (c.username || c.uid));
+            loadPaymentClaims();
+          });
+        });
+      });
+    });
+  }
+  function denyClaim(key) {
+    if (!isFounderUid(myUid())) { return; }
+    var ref = db.ref("paymentClaims/" + key);
+    ref.once("value", function (snap) {
+      var c = snap.val();
+      if (!c || (c.status || "pending") !== "pending") { flashNotice("that claim is already decided."); loadPaymentClaims(); return; }
+      askConfirm("Deny this claim? The buyer gets nothing.", function () {
+        ref.update({ status: "denied" }, function (err) {
+          if (err) { flashNotice("could not deny — try again."); return; }
+          flashNotice("claim denied.");
+          loadPaymentClaims();
+        });
       });
     });
   }
@@ -11483,10 +11612,16 @@ function petCurrentStats(stored) {
     hours = Math.max(0, (Date.now() - st.updatedAt) / 3600000);
   }
   var drain = hours * rate;
+  var tricks = {};
+  if (st.tricks && typeof st.tricks === "object") {
+    for (var tk in st.tricks) { if (st.tricks[tk]) { tricks[tk] = true; } }
+  }
   return {
     hunger: Math.max(0, Math.min(100, (typeof st.hunger === "number" ? st.hunger : 100) - drain)),
     happiness: Math.max(0, Math.min(100, (typeof st.happiness === "number" ? st.happiness : 100) - drain)),
-    xp: xp, level: lvl
+    xp: xp, level: lvl,
+    tricks: tricks,
+    shinies: (typeof st.shinies === "number") ? st.shinies : 0
   };
 }
 function petStatsRef(pet) {
@@ -11524,7 +11659,10 @@ function petApplyCare(which, cost) {
       var st = petCurrentStats(cur || { hunger: 100, happiness: 100, xp: 0, updatedAt: now });
       if (which === "feed") { st.hunger = Math.min(100, st.hunger + 25); }
       else { st.happiness = Math.min(100, st.happiness + 25); }
-      return { hunger: st.hunger, happiness: st.happiness, xp: st.xp + 10, updatedAt: now };
+      var out = { hunger: st.hunger, happiness: st.happiness, xp: st.xp + 10, updatedAt: now };
+      if (st.tricks && Object.keys(st.tricks).length) { out.tricks = st.tricks; }
+      if (st.shinies) { out.shinies = st.shinies; }
+      return out;
     }, function (err, committed, snap) {
       if (err || !committed) { flashNotice("something went wrong, try again."); return; }
       var v = snap.val() || {};
@@ -11535,6 +11673,149 @@ function petApplyCare(which, cost) {
       renderPetScreen();
     });
   });
+}
+/* ---------- pet activities (2026-11-23): tricks, walk, fetch ----------
+   These work even when hunger/happiness are full — they never touch the
+   bars, only pet xp (and shinies). petStats keeps the extra fields
+   (tricks map, shinies count); every transaction preserves them. */
+var PET_TRICKS = ["sit", "roll over", "high five", "spin", "play dead"];
+var PET_TRICK_COST = 10;
+var PET_TRICK_XP = 15;
+var PET_WALK_COST = 5;
+var PET_WALK_XP = 10;
+var PET_FETCH_COST = 2;
+var PET_FETCH_SPOTS = ["bush", "box", "pond"];
+var petFetchSpot = null; // where the ball is hidden this round (session only)
+function petStatsOut(st, xpGain) {
+  // build the petStats record to write, preserving tricks + shinies
+  var out = { hunger: st.hunger, happiness: st.happiness, xp: st.xp + xpGain, updatedAt: Date.now() };
+  if (st.tricks && Object.keys(st.tricks).length) { out.tricks = st.tricks; }
+  if (st.shinies) { out.shinies = st.shinies; }
+  return out;
+}
+function petAfterActivity(before, msg, showHappy) {
+  // shared tail: refresh stats, re-render, then show the message (+ happy frame)
+  var after = myPetStats ? petLevelFor(myPetStats.xp) : 1;
+  if (after > before) { flashNotice("your pet reached level " + after + "!"); }
+  else { flashNotice(msg); }
+  renderPetScreen();
+  if (showHappy && PET_ART[myPet]) {
+    document.getElementById("pet-img").src = PET_ART[myPet].happy;
+  }
+  document.getElementById("pet-msg").textContent = msg;
+}
+function petTeachTrick(trick) {
+  var me = myUid();
+  if (!me || !myPet) { return; }
+  var st0 = myPetStats || { tricks: {} };
+  if (st0.tricks && st0.tricks[trick]) { petDoTrick(trick); return; }
+  if (myXp < PET_TRICK_COST) { flashNotice("not enough xp! teaching a trick costs 10 xp."); return; }
+  var pet = myPet;
+  var before = petLevelFor(st0.xp || 0);
+  petDeductXp(PET_TRICK_COST, function (ok) {
+    if (!ok) { flashNotice("not enough xp!"); return; }
+    petStatsRef(pet).transaction(function (cur) {
+      var now = Date.now();
+      var st = petCurrentStats(cur || { hunger: 100, happiness: 100, xp: 0, updatedAt: now });
+      var tricks = {};
+      for (var k in st.tricks) { tricks[k] = true; }
+      tricks[trick] = true;
+      var out = petStatsOut(st, PET_TRICK_XP);
+      out.tricks = tricks;
+      return out;
+    }, function (err, committed, snap) {
+      if (err || !committed) { flashNotice("something went wrong, try again."); return; }
+      myPetStats = petCurrentStats(snap.val() || {});
+      petAfterActivity(before, "your " + (petNames[pet] || pet) + " learned " + trick + "!", true);
+    });
+  });
+}
+function petDoTrick(trick) {
+  // perform a learned trick: no cost, no xp — just for fun
+  if (!myPet || !PET_ART[myPet]) { return; }
+  document.getElementById("pet-img").src = PET_ART[myPet].happy;
+  document.getElementById("pet-msg").textContent = "your " + (petNames[myPet] || myPet) + " does " + trick + "!";
+}
+function petWalk() {
+  var me = myUid();
+  if (!me || !myPet) { return; }
+  if (myXp < PET_WALK_COST) { flashNotice("not enough xp! a walk costs 5 xp."); return; }
+  var pet = myPet;
+  var before = myPetStats ? petLevelFor(myPetStats.xp) : 1;
+  petDeductXp(PET_WALK_COST, function (ok) {
+    if (!ok) { flashNotice("not enough xp!"); return; }
+    var r = Math.random();
+    var foundXp = (r >= 0.4 && r < 0.8);
+    var foundShiny = (r >= 0.8);
+    petStatsRef(pet).transaction(function (cur) {
+      var now = Date.now();
+      var st = petCurrentStats(cur || { hunger: 100, happiness: 100, xp: 0, updatedAt: now });
+      var out = petStatsOut(st, PET_WALK_XP);
+      if (foundShiny) { out.shinies = (st.shinies || 0) + 1; }
+      return out;
+    }, function (err, committed, snap) {
+      if (err || !committed) { flashNotice("something went wrong, try again."); return; }
+      myPetStats = petCurrentStats(snap.val() || {});
+      var msg;
+      if (foundShiny) { msg = "your " + (petNames[pet] || pet) + " found a shiny on your walk!"; }
+      else if (foundXp) { changeXp(me, 5); msg = "your " + (petNames[pet] || pet) + " found 5 xp on your walk!"; }
+      else { msg = "you took your " + (petNames[pet] || pet) + " for a nice walk."; }
+      petAfterActivity(before, msg, true);
+    });
+  });
+}
+function petStartFetch() {
+  var me = myUid();
+  if (!me || !myPet) { return; }
+  if (petFetchSpot) { return; } // already playing
+  if (myXp < PET_FETCH_COST) { flashNotice("not enough xp! fetch costs 2 xp."); return; }
+  petDeductXp(PET_FETCH_COST, function (ok) {
+    if (!ok) { flashNotice("not enough xp!"); return; }
+    petFetchSpot = PET_FETCH_SPOTS[Math.floor(Math.random() * PET_FETCH_SPOTS.length)];
+    document.getElementById("pet-fetch-row").className = "";
+    document.getElementById("pet-msg").textContent = "your " + (petNames[myPet] || myPet) + " hid the ball — where is it?";
+  });
+}
+function petPickFetch(spot) {
+  if (!petFetchSpot || !myPet) { return; }
+  var me = myUid();
+  var pet = myPet;
+  var won = (spot === petFetchSpot);
+  petFetchSpot = null;
+  document.getElementById("pet-fetch-row").className = "hidden";
+  var before = myPetStats ? petLevelFor(myPetStats.xp) : 1;
+  var xpGain = won ? 10 : 5;
+  petStatsRef(pet).transaction(function (cur) {
+    var now = Date.now();
+    var st = petCurrentStats(cur || { hunger: 100, happiness: 100, xp: 0, updatedAt: now });
+    return petStatsOut(st, xpGain);
+  }, function (err, committed, snap) {
+    if (err || !committed) { flashNotice("something went wrong, try again."); return; }
+    myPetStats = petCurrentStats(snap.val() || {});
+    var msg;
+    if (won) {
+      changeXp(me, 5);
+      msg = "you found it! your " + (petNames[pet] || pet) + " is so happy! (+5 xp back)";
+    } else {
+      msg = "not there! your " + (petNames[pet] || pet) + " brings the ball back anyway.";
+    }
+    petAfterActivity(before, msg, won);
+  });
+}
+function renderPetTricks(st) {
+  var box = document.getElementById("pet-tricks");
+  if (!box) { return; }
+  box.innerHTML = "";
+  var learned = (st && st.tricks) ? st.tricks : {};
+  for (var i = 0; i < PET_TRICKS.length; i++) {
+    (function (trick) {
+      var b = document.createElement("button");
+      b.className = "secondary";
+      b.textContent = learned[trick] ? trick + " ✓" : trick + " (10 xp)";
+      b.onclick = function () { petTeachTrick(trick); };
+      box.appendChild(b);
+    })(PET_TRICKS[i]);
+  }
 }
 function petPick(key) {
   var me = myUid();
@@ -11553,7 +11834,7 @@ function petPick(key) {
       myPet = key;
       if (!myPetStatsAll) { myPetStatsAll = {}; }
       myPetStatsAll[key] = { hunger: 100, happiness: 100, xp: 0, updatedAt: now };
-      myPetStats = { hunger: 100, happiness: 100, xp: 0, level: 1 };
+      myPetStats = { hunger: 100, happiness: 100, xp: 0, level: 1, tricks: {}, shinies: 0 };
       flashNotice(firstPick ? "you got a " + (petNames[key] || key) + "!" : "your pet is now a " + (petNames[key] || key) + "!");
       refreshHome();
       renderPetScreen();
@@ -11602,7 +11883,7 @@ function renderPetScreen() {
     return;
   }
   main.className = "";
-  var st = myPetStats || { hunger: 100, happiness: 100, xp: 0, level: 1 };
+  var st = myPetStats || { hunger: 100, happiness: 100, xp: 0, level: 1, tricks: {}, shinies: 0 };
   var img = document.getElementById("pet-img");
   img.src = (st.happiness >= 50) ? PET_ART[myPet].happy : PET_ART[myPet].idle;
   img.alt = petNames[myPet] || myPet;
@@ -11617,7 +11898,12 @@ function renderPetScreen() {
   var pb = document.getElementById("pet-play-btn");
   fb.disabled = st.hunger >= 100;
   pb.disabled = st.happiness >= 100;
+  var sh = document.getElementById("pet-shinies");
+  if (sh) { sh.textContent = "shinies: " + (st.shinies || 0); }
   document.getElementById("pet-msg").textContent = "";
+  var fr = document.getElementById("pet-fetch-row");
+  if (fr) { fr.className = petFetchSpot ? "" : "hidden"; }
+  renderPetTricks(st);
   renderPetPicker();
 }
 function enterPetScreen() {
@@ -11645,6 +11931,11 @@ function enterPetScreen() {
 document.getElementById("pet-home-btn").onclick = goHome;
 document.getElementById("pet-feed-btn").onclick = function () { petApplyCare("feed", PET_FEED_COST); };
 document.getElementById("pet-play-btn").onclick = function () { petApplyCare("play", PET_PLAY_COST); };
+document.getElementById("pet-walk-btn").onclick = petWalk;
+document.getElementById("pet-fetch-btn").onclick = petStartFetch;
+document.getElementById("pet-fetch-bush").onclick = function () { petPickFetch("bush"); };
+document.getElementById("pet-fetch-box").onclick = function () { petPickFetch("box"); };
+document.getElementById("pet-fetch-pond").onclick = function () { petPickFetch("pond"); };
 function themePickerInto(row, current, onPick, owned) {
   var defs = themeDefs;
   if (owned) { defs = defs.filter(function (td) { return owned.indexOf(td.id) !== -1; }); }
@@ -16629,6 +16920,89 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     if (DONATE_URL) { window.open(DONATE_URL, "_blank"); }
     else { document.getElementById("donate-msg").textContent = "donations aren't set up yet — check back soon!"; }
   };
+  /* ---------- venmo shop + payment claims (2026-11-23) ----------
+     No auto-verification exists for Venmo (no API): the buyer pays
+     @readium, then "I paid!" writes a claim to paymentClaims. A founder
+     checks the payment in the Venmo app and approves it in the mod
+     dashboard — approving grants the item. */
+  var PAY_ITEMS = [
+    { id: "beta", name: "Beta access", desc: "unlock the beta test site", price: 2, note: "beta" },
+    { id: "xp100", name: "100 XP", desc: "100 xp for your account", price: 1, note: "xp100" },
+    { id: "xp350", name: "350 XP", desc: "350 xp for your account", price: 3, note: "xp350" },
+    { id: "xp600", name: "600 XP", desc: "600 xp for your account", price: 5, note: "xp600" }
+  ];
+  var PAY_XP = { xp100: 100, xp350: 350, xp600: 600 };
+  var paySelected = null;
+  function payItemById(id) {
+    for (var i = 0; i < PAY_ITEMS.length; i++) { if (PAY_ITEMS[i].id === id) { return PAY_ITEMS[i]; } }
+    return null;
+  }
+  function renderPayShop() {
+    var box = document.getElementById("donate-shop");
+    if (!box) { return; }
+    box.innerHTML = "";
+    for (var i = 0; i < PAY_ITEMS.length; i++) {
+      (function (it) {
+        var d = document.createElement("div");
+        var t = document.createElement("p");
+        t.style.fontSize = "16px";
+        t.textContent = it.name + " — $" + it.price + " (" + it.desc + ")";
+        d.appendChild(t);
+        var b = document.createElement("button");
+        b.className = "secondary";
+        b.textContent = "buy — $" + it.price;
+        b.onclick = function () { paySelectItem(it.id); };
+        d.appendChild(b);
+        box.appendChild(d);
+      })(PAY_ITEMS[i]);
+    }
+  }
+  function paySelectItem(id) {
+    var it = payItemById(id);
+    if (!it) { return; }
+    if (!myUid()) { flashNotice("sign in first to buy."); return; }
+    paySelected = it;
+    document.getElementById("donate-claim").className = "";
+    document.getElementById("donate-claim-title").textContent = it.name + " — $" + it.price;
+    document.getElementById("donate-claim-amount").textContent = "$" + it.price;
+    var dn = displayName();
+    document.getElementById("donate-claim-user").value = (dn && dn !== "Reader") ? dn : "";
+    document.getElementById("donate-claim-venmo").value = "";
+    document.getElementById("donate-claim-msg").textContent = "";
+    payUpdateNote();
+  }
+  function payUpdateNote() {
+    if (!paySelected) { return; }
+    var un = String(document.getElementById("donate-claim-user").value || "").trim().toLowerCase();
+    document.getElementById("donate-claim-note").textContent = (un ? un : "your username") + " " + paySelected.note;
+  }
+  function paySubmitClaim() {
+    if (!paySelected) { return; }
+    var me = myUid();
+    if (!me) { flashNotice("sign in first to buy."); return; }
+    var un = String(document.getElementById("donate-claim-user").value || "").trim().toLowerCase();
+    var vn = String(document.getElementById("donate-claim-venmo").value || "").trim();
+    var msg = document.getElementById("donate-claim-msg");
+    if (!validUsername(un)) { msg.textContent = "enter your readium username (3-20 characters)."; return; }
+    var claim = {
+      uid: me,
+      username: un,
+      venmoName: vn,
+      item: paySelected.id,
+      amount: paySelected.price,
+      at: firebase.database.ServerValue.TIMESTAMP,
+      status: "pending"
+    };
+    db.ref("paymentClaims").push(claim, function (err) {
+      if (err) { msg.textContent = "could not send that — try again. (" + (err.message || err) + ")"; return; }
+      msg.textContent = "sent! Mia will confirm your Venmo payment and your " + paySelected.name + " will appear.";
+      document.getElementById("donate-claim").className = "hidden";
+      paySelected = null;
+    });
+  }
+  document.getElementById("donate-claim-user").oninput = payUpdateNote;
+  document.getElementById("donate-paid-btn").onclick = paySubmitClaim;
+  renderPayShop();
 
   /* ---------- muse assistant (founder only) ---------- */
   function updateMuseBtn() { document.getElementById("apps-muse-btn").classList.toggle("hidden", !isFounderUid(myUid())); }
