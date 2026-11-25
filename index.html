@@ -494,7 +494,10 @@
   .board-xp { margin-left: auto; }
   .board-tab { margin: 2px; }
   .board-tab.on { font-weight: bold; text-decoration: underline; }
-  /* LEADERBOARD POPUP: bio-window-sized card instead of a full screen. */
+  /* LEADERBOARD POPUP: small card by default; the XP leaderboard uses
+     the full-screen variant below (2026-11-25, suggestion #5). */
+  #board-popup.board-full #board-popup-card { max-width: none; width: 100%; margin: 0; min-height: 100%; padding: 16px; border-width: 0; }
+  #board-popup.board-full #board-popup-list { max-height: none; }
   #board-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.96); z-index: 80; overflow-y: auto; }
   #board-popup.hidden { display: none; }
   #board-popup-card { border: 4px solid #111111; background: #ffffff; color: #111111; max-width: 420px; width: 92%; margin: 60px auto; padding: 16px; box-sizing: border-box; }
@@ -637,6 +640,7 @@
   <div class="logo" aria-label="Readium!"><span style="transform: rotate(-5deg)">R</span><span style="transform: rotate(3deg)">e</span><span style="transform: rotate(-2deg)">a</span><span style="transform: rotate(4deg)">d</span><span style="transform: rotate(-3deg)">i</span><span style="transform: rotate(2deg)">u</span><span style="transform: rotate(-4deg)">m</span><span style="transform: rotate(3deg)">!</span></div>
   <div class="logo-bar"></div>
   <p class="subtext" id="home-tagline">October event is LIVE!!! -chickn</p>
+  <p id="home-streak" style="font-size:16px"></p>
   <button id="tagline-edit-btn" class="mini secondary hidden">edit tagline</button>
   <button id="messages-btn">messages <span class="dm-dot dot hidden"></span></button>
   <button id="feast-btn" class="feast-btn">november event</button>
@@ -1285,6 +1289,7 @@
     <button id="lh-tile-mood" class="secondary" style="padding:16px 8px;font-size:18px;">mood journal</button>
     <button id="lh-tile-focus" class="secondary" style="padding:16px 8px;font-size:18px;">focus timer</button>
     <button id="lh-tile-note" class="secondary" style="padding:16px 8px;font-size:18px;">note to self</button>
+    <button id="lh-tile-calc" class="secondary" style="padding:16px 8px;font-size:18px;">calculator</button>
   </div>
   <div id="lh-section-todo" class="hidden">
   <h2>to-do list</h2>
@@ -1333,6 +1338,12 @@
   <textarea id="lh-note-text" placeholder="write yourself a note..." style="width:96%;min-height:80px;"></textarea>
   <button id="lh-note-save">save note</button>
   <p id="lh-note-msg" style="font-size:16px"></p>
+  <button class="secondary lh-section-back">back to tiles</button>
+  </div>
+  <div id="lh-section-calc" class="hidden">
+  <h2>calculator</h2>
+  <p id="lh-calc-display" style="font-size:28px;border:3px solid #000;padding:8px;text-align:right;">0</p>
+  <div id="lh-calc-btns" style="margin:8px 0"></div>
   <button class="secondary lh-section-back">back to tiles</button>
   </div>
   <button id="lifehub-back-btn" class="secondary">back</button>
@@ -1467,6 +1478,8 @@
         <button id="alc-clear-btn" class="secondary">clear</button>
       </div>
       <p id="alc-msg" style="text-align:center;min-height:20px;"></p>
+      <p style="text-align:center;margin:8px 0;"><button id="alc-recipes-btn" class="secondary">recipe book</button></p>
+      <div id="alc-recipes" class="hidden" style="border:2px solid #000;padding:8px;margin:8px 0;max-height:300px;overflow-y:auto;text-align:left;"></div>
       <h2>leaderboard</h2>
       <div id="alc-board"><p>loading...</p></div>
       <button id="alc-home-btn" class="secondary">games</button>
@@ -1993,6 +2006,7 @@
     <p>time on readium: <span id="pp-minutes"></span></p>
     <p>followers: <span id="pp-followers">0</span></p>
     <p>last online: <span id="pp-lastonline"></span></p>
+    <p>login streak: <span id="pp-streak"></span></p>
     <button id="pp-follow-btn" class="secondary">follow</button>
     <div id="pp-badges" style="margin:8px 0;"></div>
     <button id="pp-dm-btn" class="secondary">dm</button>
@@ -3262,9 +3276,14 @@
     if (!uid) { return; }
     db.ref("mentionNotifs/" + uid).once("value", function (snap) {
       renderMentions(snap.val());
-      // clear notifications so the dot goes away
+      // clear notifications so the dot goes away — delete each entry
+      // one by one. The rules allow deleting your own entries, but NOT
+      // deleting the whole inbox node at once, so the old whole-node
+      // remove() was denied and the dot never cleared.
       if (snap.exists()) {
-        db.ref("mentionNotifs/" + uid).remove();
+        snap.forEach(function (ch) {
+          try { db.ref("mentionNotifs/" + uid + "/" + ch.key).remove(); } catch (e) {}
+        });
       }
     });
   }
@@ -3295,7 +3314,19 @@
   }
   document.getElementById("mentions-clear-btn").onclick = function () {
     var uid = myUid();
-    if (uid) { db.ref("mentionNotifs/" + uid).remove(function () { renderMentions(null); }); }
+    if (!uid) { return; }
+    // clear the list on screen right away, then delete each notification
+    // from the server one by one (a whole-node remove() is denied by the
+    // rules — only deleting your own entries is allowed — which is why
+    // "clear all" never did anything).
+    renderMentions(null);
+    mentionSeen = {};
+    db.ref("mentionNotifs/" + uid).once("value", function (snap) {
+      if (!snap.exists()) { return; }
+      snap.forEach(function (ch) {
+        try { db.ref("mentionNotifs/" + uid + "/" + ch.key).remove(); } catch (e) {}
+      });
+    });
   };
 
   /* ---------- what did you miss ---------- */
@@ -7002,7 +7033,7 @@
   document.getElementById("lifehub-back-btn").onclick = function () { lhFocusPause(); showScreen("apps-screen"); };
   function lhShowTiles() {
     document.getElementById("lh-tile-grid").classList.remove("hidden");
-    ["todo", "habits", "water", "mood", "focus", "note"].forEach(function (s) {
+    ["todo", "habits", "water", "mood", "focus", "note", "calc"].forEach(function (s) {
       document.getElementById("lh-section-" + s).classList.add("hidden");
     });
   }
@@ -7016,6 +7047,83 @@
   document.getElementById("lh-tile-mood").onclick = function () { lhShowSection("mood"); };
   document.getElementById("lh-tile-focus").onclick = function () { lhShowSection("focus"); };
   document.getElementById("lh-tile-note").onclick = function () { lhShowSection("note"); };
+  document.getElementById("lh-tile-calc").onclick = function () { lhCalcBuildBtns(); lhShowSection("calc"); };/* ---------- lifestyle calculator (2026-11-25, suggestion #8) ----------
+   Basic arithmetic only for v1: 0-9, ., + - x /, =, C. Big buttons for
+   the Kindle. No save needed — it is a stateless calculator. */
+var lhCalcCur = "0", lhCalcPrev = null, lhCalcOp = null, lhCalcFresh = true;
+function lhCalcShow(v) { document.getElementById("lh-calc-display").textContent = v; }
+function lhCalcNum(d) {
+  if (lhCalcFresh) { lhCalcCur = d; lhCalcFresh = false; }
+  else if (lhCalcCur.replace("-", "").replace(".", "").length < 12) {
+    lhCalcCur = (lhCalcCur === "0") ? d : lhCalcCur + d;
+  }
+  lhCalcShow(lhCalcCur);
+}
+function lhCalcDot() {
+  if (lhCalcFresh) { lhCalcCur = "0."; lhCalcFresh = false; }
+  else if (lhCalcCur.indexOf(".") === -1) { lhCalcCur += "."; }
+  lhCalcShow(lhCalcCur);
+}
+function lhCalcDo(a, op, b) {
+  if (op === "+") { return a + b; }
+  if (op === "-") { return a - b; }
+  if (op === "x") { return a * b; }
+  if (op === "/") { return b === 0 ? NaN : a / b; }
+  return b;
+}
+function lhCalcFmt(n) {
+  if (isNaN(n) || !isFinite(n)) { return "error"; }
+  var s = String(Math.round(n * 100000000) / 100000000);
+  return s.length > 14 ? n.toExponential(6) : s;
+}
+function lhCalcOp(op) {
+  if (lhCalcPrev !== null && lhCalcOp && !lhCalcFresh) {
+    lhCalcPrev = lhCalcDo(lhCalcPrev, lhCalcOp, parseFloat(lhCalcCur));
+    lhCalcShow(lhCalcFmt(lhCalcPrev));
+  } else {
+    lhCalcPrev = parseFloat(lhCalcCur);
+  }
+  lhCalcOp = op;
+  lhCalcFresh = true;
+}
+function lhCalcEq() {
+  if (lhCalcPrev === null || !lhCalcOp) { return; }
+  var r = lhCalcDo(lhCalcPrev, lhCalcOp, parseFloat(lhCalcCur));
+  lhCalcCur = lhCalcFmt(r);
+  lhCalcPrev = null; lhCalcOp = null; lhCalcFresh = true;
+  lhCalcShow(lhCalcCur);
+}
+function lhCalcClear() {
+  lhCalcCur = "0"; lhCalcPrev = null; lhCalcOp = null; lhCalcFresh = true;
+  lhCalcShow("0");
+}
+function lhCalcBuildBtns() {
+  var box = document.getElementById("lh-calc-btns");
+  if (!box || box.children.length) { return; }
+  var rows = [["7", "8", "9", "/"], ["4", "5", "6", "x"], ["1", "2", "3", "-"], ["0", ".", "=", "+"], ["C"]];
+  for (var r = 0; r < rows.length; r++) {
+    var row = document.createElement("div");
+    row.style.marginBottom = "6px";
+    for (var c = 0; c < rows[r].length; c++) {
+      (function (label) {
+        var b = document.createElement("button");
+        b.textContent = (label === "x") ? "\u00D7" : (label === "/") ? "\u00F7" : (label === "-") ? "\u2212" : label;
+        b.style.fontSize = "22px"; b.style.padding = "14px 6px"; b.style.margin = "3px";
+        b.style.minWidth = "64px";
+        if (label === "=") { b.style.minWidth = "64px"; }
+        b.onclick = function () {
+          if (label >= "0" && label <= "9") { lhCalcNum(label); }
+          else if (label === ".") { lhCalcDot(); }
+          else if (label === "=") { lhCalcEq(); }
+          else if (label === "C") { lhCalcClear(); }
+          else { lhCalcOp(label); }
+        };
+        row.appendChild(b);
+      })(rows[r][c]);
+    }
+    box.appendChild(row);
+  }
+}
   (function () {
     var backs = document.getElementsByClassName("lh-section-back");
     for (var i = 0; i < backs.length; i++) { backs[i].onclick = function () { lhShowTiles(); }; }
@@ -7322,6 +7430,7 @@
       });
     });
     renderPopupBadges(uid);
+    streakShowOnProfile(uid);
     document.getElementById("profile-popup").className = "";
   }
   document.getElementById("pp-close-btn").onclick = function () {
@@ -8127,6 +8236,7 @@
       var sentRef = messagesRef.push(msg, function (err) {
         if (err) { flashNotice("Send failed: " + (err.code || err.message || err)); return; }
         grantXp(1, "msg", 60000);
+        streakOnChat();
         if (currentRefPath && currentRefPath.indexOf("dms/") === 0) {
           var dmId2 = currentRefPath.split("/")[1];
           var other2 = dmOtherUid(dmId2);
@@ -8910,6 +9020,12 @@
   document.getElementById("gt-start-btn").onclick = function () { gtStart(); };
   document.getElementById("gt-back-btn").onclick = function () { enterGames(); };
   document.getElementById("alc-mix-btn").onclick = function () { alcMix(); };
+  document.getElementById("alc-recipes-btn").onclick = function () {
+    alcRecipeBookOpen = !alcRecipeBookOpen;
+    var box = document.getElementById("alc-recipes");
+    if (alcRecipeBookOpen) { alcRenderRecipes(); box.className = ""; document.getElementById("alc-recipes-btn").textContent = "hide recipes"; }
+    else { box.className = "hidden"; document.getElementById("alc-recipes-btn").textContent = "recipe book"; }
+  };
   document.getElementById("alc-clear-btn").onclick = function () { alcSel = []; document.getElementById("alc-msg").textContent = ""; document.getElementById("alc-box-result").textContent = "?"; alcRender(); };
   document.getElementById("alc-home-btn").onclick = function () { enterGames(); };
 
@@ -11228,6 +11344,93 @@ function grantXp(n, key, cooldownMs) {
   lsSet(k, String(Date.now()));
   changeXp(u.uid, n * xpBoostMult());
 }
+/* ---------- login streaks (2026-11-25, suggestion #1) ----------
+   A streak day counts when you log in AND send at least one chat message
+   (room chat or DM — both go through sendMessage). Stored in Firebase
+   userSettings/<uid>/loginStreak, which the live rules already let the
+   owner write, so no rules change is needed. Milestones, each once per
+   streak: +10 XP at 3 days, +25 at 7, +50 at 30, +100 at 100. Miss a day
+   and the next chat day starts a new streak at 1. */
+var STREAK_MILESTONES = [[3, 10], [7, 25], [30, 50], [100, 100]];
+var myStreak = { count: 0, lastDate: "", lastMilestone: 0 };
+function streakDayStr(d) {
+  return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+}
+function streakRenderHome() {
+  var el = document.getElementById("home-streak");
+  if (!el) { return; }
+  if (!myUid()) { el.textContent = ""; return; }
+  if (myStreak.count > 0) {
+    el.textContent = "\uD83D\uDD25 login streak: " + myStreak.count + " day" + (myStreak.count === 1 ? "" : "s") + " — chat tomorrow to keep it going!";
+  } else {
+    el.textContent = "log in and chat each day to build a login streak!";
+  }
+}
+function streakLoad() {
+  var me = myUid();
+  if (!me) { return; }
+  try {
+    db.ref("userSettings/" + me + "/loginStreak").once("value", function (snap) {
+      var v = snap.val() || {};
+      var today = streakDayStr(new Date());
+      var y = new Date(); y.setDate(y.getDate() - 1);
+      var yest = streakDayStr(y);
+      if (v.lastDate === today || v.lastDate === yest) {
+        myStreak.count = (typeof v.count === "number") ? v.count : 0;
+        myStreak.lastMilestone = (typeof v.lastMilestone === "number") ? v.lastMilestone : 0;
+        myStreak.lastDate = v.lastDate;
+      } else {
+        // streak broken (missed a day) — starts over at the next chat
+        myStreak.count = 0; myStreak.lastDate = ""; myStreak.lastMilestone = 0;
+      }
+      streakRenderHome();
+    });
+  } catch (e) {}
+}
+function streakOnChat() {
+  var me = myUid();
+  if (!me) { return; }
+  var today = streakDayStr(new Date());
+  if (myStreak.lastDate === today) { return; } // already counted today
+  var y = new Date(); y.setDate(y.getDate() - 1);
+  if (myStreak.lastDate === streakDayStr(y)) { myStreak.count++; }
+  else { myStreak.count = 1; myStreak.lastMilestone = 0; }
+  myStreak.lastDate = today;
+  var granted = 0;
+  for (var i = 0; i < STREAK_MILESTONES.length; i++) {
+    if (myStreak.count >= STREAK_MILESTONES[i][0] && myStreak.lastMilestone < STREAK_MILESTONES[i][0]) {
+      granted += STREAK_MILESTONES[i][1];
+      myStreak.lastMilestone = STREAK_MILESTONES[i][0];
+    }
+  }
+  try {
+    db.ref("userSettings/" + me + "/loginStreak").set({ count: myStreak.count, lastDate: today, lastMilestone: myStreak.lastMilestone });
+  } catch (e) {}
+  if (granted && typeof changeXp === "function") {
+    changeXp(me, granted);
+    flashNotice(myStreak.count + "-day streak! +" + granted + " xp");
+  }
+  streakRenderHome();
+}
+function streakShowOnProfile(uid) {
+  var el = document.getElementById("pp-streak");
+  if (!el) { return; }
+  el.textContent = "loading...";
+  try {
+    db.ref("userSettings/" + uid + "/loginStreak").once("value", function (snap) {
+      if (ppUid !== uid) { return; }
+      var v = snap.val() || {};
+      var today = streakDayStr(new Date());
+      var y = new Date(); y.setDate(y.getDate() - 1);
+      var yest = streakDayStr(y);
+      if ((v.lastDate === today || v.lastDate === yest) && (typeof v.count === "number") && v.count > 0) {
+        el.textContent = v.count + " day" + (v.count === 1 ? "" : "s") + " \uD83D\uDD25";
+      } else {
+        el.textContent = "no streak yet";
+      }
+    });
+  } catch (e) { el.textContent = ""; }
+}
 function xpWinOnce(game) {
   if (gameXpGiven) { return; }
   gameXpGiven = true;
@@ -11336,6 +11539,7 @@ function openBoardPopup(title) {
   document.getElementById("board-popup-tabs").innerHTML = "";
   document.getElementById("board-popup-list").innerHTML = "";
   document.getElementById("board-popup").className = "";
+  document.getElementById("board-popup").classList.remove("board-full");
 }
 function closeBoardPopup() {
   boardPopupKind = "";
@@ -11347,6 +11551,7 @@ function openXpBoardPopup() {
   if (!myUid()) { flashNotice("sign in to see the leaderboard."); return; }
   boardPopupKind = "xp";
   openBoardPopup("leaderboard");
+  document.getElementById("board-popup").classList.add("board-full");
   var tabsBox = document.getElementById("board-popup-tabs");
   [["day", "today"], ["week", "week"], ["month", "month"], ["all", "all time"]].forEach(function (pair) {
     var t = document.createElement("button");
@@ -14939,6 +15144,18 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     if (!Array.isArray(critterSave.team)) { critterSave.team = []; }
     if (!Array.isArray(critterSave.box)) { critterSave.box = []; }
     if (typeof critterSave.traps !== "number") { critterSave.traps = 5; }
+    // every critter needs its OWN id: old saves (and the old catch flow,
+    // which put the same critter on the team and in the collection) can
+    // share one id or have none at all — and critterSame() then treats
+    // two different critters as one, so releasing "merged" them.
+    var _seenInst = {};
+    [critterSave.team, critterSave.box].forEach(function (list) {
+      (list || []).forEach(function (c) {
+        if (!c.inst || _seenInst[c.inst]) { c.inst = critterNewInst(); }
+        _seenInst[c.inst] = 1;
+      });
+    });
+    critterStore();
   }
   function critterStore() {
     try { lsSet("readium_critter", JSON.stringify(critterSave)); } catch (e) {}
@@ -14988,9 +15205,10 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     for (var i = 0; i < CRITTERS.length; i++) { if (CRITTERS[i].id === id) { return CRITTERS[i]; } }
     return null;
   }
+  function critterNewInst() { return "c" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36); }
   function critterNew(id) {
     var base = critterById(id);
-    return { id: id, inst: "c" + Date.now().toString(36) + Math.floor(Math.random() * 1000000000).toString(36), name: base.name, type: base.type, maxHp: base.hp, hp: base.hp, atk: base.atk, lvl: 1 };
+    return { id: id, inst: critterNewInst(), name: base.name, type: base.type, maxHp: base.hp, hp: base.hp, atk: base.atk, lvl: 1 };
   }
   function critterSame(a, b) {
     if (!a || !b) { return false; }
@@ -16116,6 +16334,33 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     document.getElementById("alc-msg").textContent = "";
     alcRender();
   }
+/* ---------- alchemy recipe book (2026-11-25, suggestion #4) ----------
+   Lists every recipe the user has DISCOVERED (i.e. the result is in
+   alcDiscovered). Derived view — no new storage needed. */
+var alcRecipeBookOpen = false;
+function alcRenderRecipes() {
+  var box = document.getElementById("alc-recipes");
+  if (!box) { return; }
+  box.innerHTML = "";
+  var found = [];
+  for (var key in ALC_RECIPES) {
+    var res = ALC_RECIPES[key];
+    if (!alcDiscovered[res]) { continue; }
+    var parts = key.split("+");
+    found.push({ res: res, a: parts[0], b: parts[1] });
+  }
+  found.sort(function (x, y) { return x.res < y.res ? -1 : (x.res > y.res ? 1 : 0); });
+  var h = document.createElement("p");
+  h.style.fontWeight = "bold";
+  h.textContent = found.length ? found.length + " recipe" + (found.length === 1 ? "" : "s") + " discovered" : "no recipes yet — craft something first!";
+  box.appendChild(h);
+  for (var i = 0; i < found.length; i++) {
+    var p = document.createElement("p");
+    p.style.margin = "2px 0";
+    p.textContent = found[i].a + " + " + found[i].b + " = " + found[i].res;
+    box.appendChild(p);
+  }
+}
   function alcMix() {
     var msg = document.getElementById("alc-msg");
     var rbox = document.getElementById("alc-box-result");
@@ -16144,6 +16389,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
     if (isNew && typeof changeXp === "function" && myUid()) { changeXp(myUid(), 2); }
     alcSel = [];
     alcRender();
+    if (alcRecipeBookOpen) { alcRenderRecipes(); }
     if (isNew) { alcLoadBoard(); }
   }
   // load saved order
@@ -16273,18 +16519,27 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       pvpChalRef.on("value", function (snap) {
         var v = snap.val() || {};
         var now = Date.now();
+        var firstIncoming = null, firstAccepted = null;
         for (var k in v) {
           (function (key) {
             var c = v[key] || {};
-            // expire stale pending challenges (5 min)
-            if (c.status === "pending" && now - (c.at || 0) > 5 * 60 * 1000) {
+            // expire stale pending challenges
+            // pending challenges expire after 24 h (was 5 min — too short:
+            // a challenge sent while the other player was offline was
+            // already gone before they ever signed in).
+            if (c.status === "pending" && now - (c.at || 0) > 24 * 60 * 60 * 1000) {
               try { db.ref("critterChallenges/" + key + "/status").set("expired"); } catch (e) {}
               return;
             }
             // incoming challenge for me
             if (c.to === uid && c.status === "pending" && !pvpChalSeen[key]) {
               pvpChalSeen[key] = 1;
-              if (!pvpChalFirst) {
+              if (pvpChalFirst) {
+                // first snapshot after sign-in: a challenge that arrived
+                // while you were away must still reach you — the old code
+                // marked it seen here and never showed it at all.
+                if (!firstIncoming) { firstIncoming = { key: key, c: c }; }
+              } else {
                 notify((c.fromName || "someone") + " challenged you!", "critter battle! tap to respond.", function () { pvpShowChallenge(key, c); });
               }
               return;
@@ -16292,7 +16547,9 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
             // my challenge got accepted -> battle started
             if (c.from === uid && c.status === "accepted" && c.battleId && !pvpChalSeen[key + ":a"]) {
               pvpChalSeen[key + ":a"] = 1;
-              if (!pvpChalFirst) {
+              if (pvpChalFirst) {
+                if (!firstAccepted) { firstAccepted = { key: key, c: c }; }
+              } else {
                 notify("battle started!", (c.toName || "someone") + " accepted your challenge!", function () { enterPvp(c.battleId); });
               }
               return;
@@ -16307,6 +16564,13 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
           })(k);
         }
         pvpChalFirst = false;
+        // show the challenges that were already waiting when you signed in
+        if (firstIncoming) { pvpShowChallenge(firstIncoming.key, firstIncoming.c); }
+        else if (firstAccepted) {
+          (function (ac) {
+            notify("battle started!", (ac.c.toName || "someone") + " accepted your challenge!", function () { enterPvp(ac.c.battleId); });
+          })(firstAccepted);
+        }
       });
     } catch (e) {}
   }
@@ -16575,13 +16839,13 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       rel.onclick = (function (i, cc) {
         return function () {
           askConfirm("release " + cc.name + " from your team? it'll stay in your collection.", function () {
-            var inBox = false;
-            critterSave.box.forEach(function (b) { if (critterSame(b, cc)) { inBox = true; } });
-            if (!inBox) {
-              var copy = {};
-              for (var k in cc) { copy[k] = cc[k]; }
-              critterSave.box.push(copy);
-            }
+            // always add it as its own entry — even if an identical
+            // type+level is already in the collection. The old code
+            // skipped the add when a critterSame() match was already
+            // in the box, so the released one just disappeared.
+            var copy = {};
+            for (var k in cc) { copy[k] = cc[k]; }
+            critterSave.box.push(copy);
             critterSave.team.splice(i, 1);
             critterStore();
             critterBackup();
@@ -16821,6 +17085,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       if (critterSave.team.length < 6) {
         var teamCopy = {};
         for (var tk in newC) { teamCopy[tk] = newC[tk]; }
+        teamCopy.inst = critterNewInst(); // team copy is its own critter
         critterSave.team.push(teamCopy);
         b.msg = "caught " + wild.name + "! added to your team!";
       } else {
@@ -19855,6 +20120,7 @@ var GAMBLE_LAST_ROUND = 0; // 60s cooldown between new rounds (super-hard nerf: 
       updatePollDot();
       checkBanMessage();
       watchMentions();
+      streakLoad();
       loadMyBlocks();
       watchBlockNotifs();
       startNotifyWatchers();
