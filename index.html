@@ -435,7 +435,9 @@
   .dash-tile small { display: block; font-size: 14px; margin-top: 4px; }
   /* slim quick-nav bar (bottom, collapsible) */
   #side-nav { position: fixed; left: 0; right: 0; bottom: 0; background: #f4f4f4; border-top: 2px solid #111111; z-index: 60; padding: 6px; white-space: nowrap; overflow-x: auto; }
-  #side-nav button { display: inline-block; font-size: 14px; padding: 8px 10px; margin: 0 4px 0 0; vertical-align: middle; }
+  #side-nav button { display: inline-block; font-size: 14px; padding: 3px 8px; margin: 0 4px 0 0; vertical-align: middle; }
+  #side-nav .sn-ico { display: block; font-size: 20px; line-height: 1.1; }
+  #side-nav .sn-lab { display: block; font-size: 10px; line-height: 1.1; }
   #side-nav.sb-collapsed button { display: none; }
   #side-nav.sb-collapsed button#sn-toggle { display: inline-block; }
   body.sb-on { padding-bottom: 62px; }
@@ -620,13 +622,13 @@
 <body>
 <div id="notif-wrap"></div>
 <div id="side-nav">
-  <button id="sn-toggle" class="mini secondary">▲ nav</button>
-  <button id="sn-home" class="mini secondary">home</button>
-  <button id="sn-chat" class="mini secondary">chat</button>
-  <button id="sn-dms" class="mini secondary">dms</button>
-  <button id="sn-games" class="mini secondary">games</button>
-  <button id="sn-apps" class="mini secondary">apps</button>
-  <button id="sn-settings" class="mini secondary">setup</button>
+  <button id="sn-toggle" class="mini secondary">▲</button>
+  <button id="sn-home" class="mini secondary"><span class="sn-ico">⌂</span><span class="sn-lab">home</span></button>
+  <button id="sn-chat" class="mini secondary"><span class="sn-ico">💬</span><span class="sn-lab">chat</span></button>
+  <button id="sn-dms" class="mini secondary"><span class="sn-ico">✉</span><span class="sn-lab">dms</span></button>
+  <button id="sn-games" class="mini secondary"><span class="sn-ico">🎮</span><span class="sn-lab">games</span></button>
+  <button id="sn-apps" class="mini secondary"><span class="sn-ico">▦</span><span class="sn-lab">apps</span></button>
+  <button id="sn-settings" class="mini secondary"><span class="sn-ico">⚙</span><span class="sn-lab">setup</span></button>
 </div>
 
 <!-- HOME -->
@@ -1403,7 +1405,7 @@
 <div id="chat-screen" class="hidden">
   <div id="chat-main">
   <h1 id="chat-title">room <span class="dm-dot dot hidden" title="unread dms"></span></h1>
-  <div class="chat-nav"><button id="back-btn" class="secondary">back</button><button id="chat-home-btn" class="secondary">home</button><button id="sidebar-toggle-btn" class="secondary hidden">&#x2630; rooms</button><button id="dm-menu-btn" class="secondary hidden">&#x22EE; menu</button></div>
+  <div class="chat-nav"><button id="back-btn" class="secondary">←</button><button id="chat-home-btn" class="secondary">⌂</button><button id="sidebar-toggle-btn" class="secondary hidden">&#x2630; rooms</button><button id="dm-menu-btn" class="secondary hidden">&#x22EE; menu</button></div>
   <div id="dm-menu" class="hidden"></div>
   <div id="chat-sidebar" class="hidden"></div>
   <button id="dm-report-btn" class="mini secondary hidden" style="margin-bottom:8px">report this DM</button>
@@ -1742,6 +1744,7 @@
 <div id="gamemenu-screen" class="hidden">
   <h1 id="gm-title">game</h1>
   <button id="gm-bot-btn">play vs bot</button>
+  <button id="gm-puzzle-btn" class="secondary hidden">mate in one</button>
   <button id="gm-host-btn" class="secondary">host online game</button>
   <button id="gm-back-btn" class="secondary">back</button>
 </div>
@@ -1961,6 +1964,7 @@
   <div id="winboard-chess" style="margin-top:14px"></div>
   <button id="chess-rematch-btn" class="hidden">rematch</button>
   <button id="chess-resign-btn" class="hidden">resign</button>
+  <button id="chess-next-puzzle-btn" class="secondary hidden">next puzzle</button>
   <button id="chess-leave-btn" class="secondary">quit</button>
   <button id="chess-home-btn" class="secondary">home</button>
 </div>
@@ -2448,7 +2452,7 @@
     var tgl = document.getElementById("set-sidebar-toggle");
     if (tgl) { tgl.textContent = "sidebar: " + (on ? "on" : "off"); }
     var st = document.getElementById("sn-toggle");
-    if (st) { st.textContent = collapsed ? "▼ nav" : "▲ nav"; }
+    if (st) { st.textContent = collapsed ? "▼" : "▲"; }
   }
   document.getElementById("set-sidebar-toggle").onclick = function () {
     var on = !isSidebarOn();
@@ -2562,7 +2566,24 @@
       if (isFounderName(displayName(), myUid())) { document.getElementById("chip-name").appendChild(founderCheckEl()); }
       var cp = document.getElementById("chip-pfp");
       cp.innerHTML = "";
-      cp.appendChild(pfpImg(currentPfp, 1));
+      var chipImg = pfpImg(currentPfp, 1);
+      cp.appendChild(chipImg);
+      // the home chip used to stay on the blank face when currentPfp had not
+      // loaded yet (or was set on another device) - chat pfps are fetched
+      // fresh by uid, so do the same here when we have nothing cached.
+      // (2026-11-25, suggestion #16)
+      if (!currentPfp) {
+        (function (img) {
+          var me = myUid();
+          if (!me) { return; }
+          try {
+            db.ref("users/" + me + "/pfp").once("value", function (snap) {
+              var p = snap.val();
+              if (p) { currentPfp = p; try { img.src = pfpURL(p); } catch (e) {} }
+            });
+          } catch (e) {}
+        })(chipImg);
+      }
     } else {
       chip.className = "hidden";
       logout.className = "mini secondary hidden";
@@ -4126,7 +4147,18 @@
     var me = myUid();
     var other = dmOtherUid(dmId);
     if (!me || !other) { return; }
-    db.ref("userDms/" + me + "/" + other).update({ readAt: Date.now() });
+    // read the convo's lastAt first: lastAt is stamped by the SENDER's clock
+    // and readAt by the reader's, so a plain Date.now() can land *before*
+    // lastAt when the two devices disagree - and then the unread dot never
+    // clears. Writing readAt = max(lastAt, now) makes the convo count as read.
+    // (2026-11-25, suggestion #13)
+    db.ref("userDms/" + me + "/" + other).once("value", function (snap) {
+      var c = snap.val() || {};
+      var la = (typeof c.lastAt === "number") ? c.lastAt : 0;
+      db.ref("userDms/" + me + "/" + other).update({ readAt: Math.max(la, Date.now()) });
+    }, function () {
+      db.ref("userDms/" + me + "/" + other).update({ readAt: Date.now() });
+    });
   }
 
   function openDm(dmId, otherName) {
@@ -4468,7 +4500,7 @@
         var p1 = document.createElement("p");
         p1.innerHTML = "";
         var b1 = document.createElement("b");
-        b1.textContent = (r.kind === "room") ? "reported room" : "reported message";
+        b1.textContent = (r.kind === "room") ? "reported room" : ((r.refPath || "").indexOf("polls/") === 0 ? "reported poll" : "reported message");
         p1.appendChild(b1);
         row.appendChild(p1);
         var p2 = document.createElement("p");
@@ -4490,15 +4522,27 @@
           if (r.kind === "room" && r.msgId) { openChat("rooms/" + r.msgId + "/messages", "room: " + r.msgId, "msgs"); }
           else if ((r.refPath || "").indexOf("hoodPosts") === 0) { enterHood(); }
           else if ((r.refPath || "").indexOf("suggestions") === 0) { enterSuggest(); }
+          else if ((r.refPath || "").indexOf("polls/") === 0) { enterPolls(); }
           else { openChat(r.refPath, r.title || "chat", (r.refPath || "").indexOf("dms/") === 0 ? "dm" : "msgs"); }
         };
         var del = document.createElement("button");
         del.className = "mini secondary";
-        del.textContent = (r.kind === "room") ? "delete room" : "delete msg";
+        del.textContent = (r.kind === "room") ? "delete room" : ((r.refPath || "").indexOf("polls/") === 0 ? "delete poll" : "delete msg");
         del.onclick = function () {
           if (r.kind === "room") {
             askConfirm("Delete the room '" + (r.msgId || "?") + "' forever?", function () {
               deleteRoom(r.msgId);
+              db.ref("reports/" + k).remove();
+            });
+            return;
+          }
+          if ((r.refPath || "").indexOf("polls/") === 0) {
+            askConfirm("Delete this poll and all its votes + comments?", function () {
+              var pid = String(r.refPath).split("/")[1];
+              db.ref("polls/" + pid).remove();
+              db.ref("pollVotes/" + pid).remove();
+              db.ref("pollComments/" + pid).remove();
+              if (pollCommentsRefs[pid]) { pollCommentsRefs[pid].off(); delete pollCommentsRefs[pid]; }
               db.ref("reports/" + k).remove();
             });
             return;
@@ -7132,6 +7176,22 @@ function lhCalcBuildBtns() {
   var pinScriptAdded = false;
   var pinScriptFailed = false;
   var pinCurrentUrl = "https://www.pinterest.com/pinterest/";
+  // if the pinterest widget script runs but renders nothing (kindle often
+  // shows a blank box), say so plainly and offer the working link instead.
+  // (2026-11-25, suggestion #20)
+  function pinCheckEmbed(box) {
+    setTimeout(function () {
+      if (!box || box.querySelector("iframe")) { return; }
+      box.innerHTML = "";
+      var p = document.createElement("p");
+      p.textContent = "pinterest would not load here - tap below to open it on pinterest.";
+      box.appendChild(p);
+      var b = document.createElement("button");
+      b.textContent = "open on pinterest";
+      b.onclick = function () { window.open(pinCurrentUrl || "https://www.pinterest.com", "_blank"); };
+      box.appendChild(b);
+    }, 4000);
+  }
   function pinShowUrl(raw) {
     var box = document.getElementById("pin-widget-box");
     var msg = document.getElementById("pin-msg");
@@ -7155,13 +7215,13 @@ function lhCalcBuildBtns() {
     a.textContent = isBoard ? "pinterest board" : "pinterest profile";
     box.appendChild(a);
     msg.textContent = isBoard ? "loading board..." : "loading profile...";
-    if (window.PinUtils && window.PinUtils.build) { window.PinUtils.build(); msg.textContent = ""; }
+    if (window.PinUtils && window.PinUtils.build) { window.PinUtils.build(); msg.textContent = ""; pinCheckEmbed(box); }
     else if (!pinScriptAdded || pinScriptFailed) {
       pinScriptAdded = true;
       pinScriptFailed = false;
       var sc = document.createElement("script");
       sc.async = true; sc.defer = true; sc.src = "https://assets.pinterest.com/js/pinit.js";
-      sc.onload = function () { if (window.PinUtils && window.PinUtils.build) { window.PinUtils.build(); } msg.textContent = ""; };
+      sc.onload = function () { if (window.PinUtils && window.PinUtils.build) { window.PinUtils.build(); } msg.textContent = ""; pinCheckEmbed(box); };
       sc.onerror = function () { pinScriptFailed = true; msg.textContent = "pinterest would not load here — try 'open on pinterest'."; };
       document.body.appendChild(sc);
     } else { msg.textContent = "pinterest is still loading — tap 'show it' again or use 'open on pinterest'."; }
@@ -7877,6 +7937,12 @@ function lhCalcBuildBtns() {
   }
 
   function renderMessage(pushId, m) {
+    // dedup: child_added can re-fire for the same message after a reconnect
+    // or a listener re-attach, and without this guard the old message gets
+    // appended a second time. msgEls is reset whenever the list is rebuilt
+    // (openChat / DM open), so this only skips true duplicates.
+    // (2026-11-25, suggestion #14)
+    if (msgEls[pushId]) { return; }
     // hidden for users I've blocked
     if (m && m.uid && myBlocks[m.uid]) { return; }
     var box = document.getElementById("messages");
@@ -9003,6 +9069,7 @@ function lhCalcBuildBtns() {
     gmGame = g;
     document.getElementById("gm-title").textContent = g === "ttt" ? "tic tac toe" : g === "c4" ? "connect four" : g === "chess" ? "chess" : "pictionary";
     document.getElementById("gm-bot-btn").className = (g === "pic") ? "hidden" : "";
+    document.getElementById("gm-puzzle-btn").className = (g === "chess") ? "secondary" : "secondary hidden";
     showScreen("gamemenu-screen");
   }
   document.getElementById("g-tile-ttt").onclick = function () { showGameTitle("ttt"); };
@@ -10630,6 +10697,38 @@ function chessTap(i) {
   renderChess();
 }
 function chessDoMove(mv) {
+  if (chessMode === "puzzle") {
+    // mate-in-one: apply locally, then judge the move. A mate solves the
+    // puzzle (+10 xp the first time this puzzle is solved); anything else
+    // resets to the start position so you can try again.
+    chessState = chessNext(chessState, mv);
+    chessLastMove = { from: mv.from, to: mv.to };
+    chessSel = -1; chessTgts = [];
+    renderChess();
+    var pst = chessStatus(chessState);
+    if (pst.over && pst.result === "w") {
+      var solved = [];
+      try { solved = (localStorage.getItem("mate1_solved") || "").split(",").filter(function (x) { return x !== ""; }); } catch (e) {}
+      if (solved.indexOf(String(chessPuzzleIdx)) === -1) {
+        solved.push(String(chessPuzzleIdx));
+        try { localStorage.setItem("mate1_solved", solved.join(",")); } catch (e) {}
+        grantXp(10, "mate1-" + chessPuzzleIdx, 0);
+      }
+      document.getElementById("chess-status").textContent = "checkmate! you solved it! +10 xp - tap next puzzle for another one.";
+    } else {
+      document.getElementById("chess-status").textContent = "not checkmate - try again!";
+      var resetIdx = chessPuzzleIdx;
+      setTimeout(function () {
+        if (chessMode === "puzzle" && chessPuzzleIdx === resetIdx) {
+          chessState = chessPuzzleState(resetIdx);
+          chessSel = -1; chessTgts = []; chessLastMove = null;
+          renderChess();
+          document.getElementById("chess-status").textContent = chessPuzzleStatusText();
+        }
+      }, 900);
+    }
+    return;
+  }
   if (chessMode === "bot") {
     chessState = chessNext(chessState, mv);
     chessLastMove = { from: mv.from, to: mv.to };
@@ -10677,6 +10776,55 @@ function chessDoMove(mv) {
     });
   }
 }
+/* ---------- mate in one puzzles (2026-11-25, suggestion #17) ----------
+   Six positions, white to move, exactly one mating move each. Every
+   position was verified against this file's own chess engine (node:
+   suggestions-build/verify-puzzles.mjs) so there is exactly one solution.
+   Local only: no Firebase game, no opponent. +10 xp the first time each
+   puzzle is solved (grantXp key "mate1-<idx>"). */
+var CHESS_PUZZLES = [
+  { name: "back-rank rook", pieces: { g1: "wk", e1: "wr", g8: "bk", f7: "bp", g7: "bp", h7: "bp" } },
+  { name: "queen + bishop", pieces: { g1: "wk", d5: "wq", c4: "wb", e8: "bk", d8: "bq", f7: "bp", g7: "bp", h7: "bp", f8: "bb" } },
+  { name: "double rook", pieces: { g1: "wk", a1: "wr", h1: "wr", g8: "bk", f7: "bp", g7: "bp", h7: "bp" } },
+  { name: "knight mate", pieces: { g1: "wk", g4: "wn", d6: "wp", d4: "wb", c7: "wb", e8: "bk", f7: "bp", f8: "bb" } },
+  { name: "smothered mate", pieces: { g1: "wk", e5: "wn", h8: "bk", g7: "bp", h7: "bp", g8: "br" } },
+  { name: "queen back-rank", pieces: { g1: "wk", d1: "wq", g6: "wp", h6: "wb", g8: "bk", f7: "bp", h7: "bp" } }
+];
+var chessPuzzleIdx = 0;
+function chessPuzzleState(idx) {
+  var pieces = CHESS_PUZZLES[idx].pieces;
+  var b = [];
+  for (var i = 0; i < 64; i++) { b.push(null); }
+  for (var sq in pieces) {
+    var f = sq.charCodeAt(0) - 97;
+    var r = parseInt(sq[1], 10);
+    b[(8 - r) * 8 + f] = pieces[sq];
+  }
+  return { b: b, turn: "w", cast: { wk: false, wq: false, bk: false, bq: false }, ep: -1 };
+}
+function chessPuzzleStatusText() {
+  return "puzzle " + (chessPuzzleIdx + 1) + " of " + CHESS_PUZZLES.length + " (" + CHESS_PUZZLES[chessPuzzleIdx].name + ") - white to move, find the mate in one!";
+}
+function startMatePuzzle(idx) {
+  gameMode = "bot";
+  chessMode = "puzzle";
+  chessPuzzleIdx = ((idx % CHESS_PUZZLES.length) + CHESS_PUZZLES.length) % CHESS_PUZZLES.length;
+  chessState = chessPuzzleState(chessPuzzleIdx);
+  chessMyColor = "w";
+  chessSel = -1; chessTgts = []; chessThinking = false;
+  chessLastMove = null;
+  document.getElementById("chess-title").textContent = "mate in one";
+  document.getElementById("chess-rematch-btn").className = "hidden";
+  document.getElementById("chess-resign-btn").className = "hidden";
+  document.getElementById("chess-next-puzzle-btn").className = "secondary";
+  document.getElementById("chess-leave-btn").textContent = "quit";
+  stopOpenGames();
+  showScreen("chess-screen");
+  renderChess();
+  document.getElementById("chess-status").textContent = chessPuzzleStatusText();
+}
+document.getElementById("gm-puzzle-btn").onclick = function () { startMatePuzzle(0); };
+document.getElementById("chess-next-puzzle-btn").onclick = function () { startMatePuzzle(chessPuzzleIdx + 1); };
 function startChessBot() {
   gameXpGiven = false;
   gameMode = "bot";
@@ -17280,7 +17428,9 @@ function alcRenderRecipes() {
               });
             }
           })(meta, metaBase, p);
-          // pin button for the founder only (exact uid - never by name)
+          // pin stays founder-only (exact uid - never by name); delete is
+          // open to mods too (2026-11-25, suggestion #22 - needs a rules
+          // update before a mod's delete is actually allowed; see batch report)
           (function (pollId, isPinned) {
             if (isFounderUid(myUid())) {
                 var pinBtn = document.createElement("button");
@@ -17291,6 +17441,8 @@ function alcRenderRecipes() {
                   db.ref("polls/" + pollId).update({ pinned: !isPinned });
                 };
                 wrap.appendChild(pinBtn);
+            }
+            if (canModerate()) {
                 var delBtn = document.createElement("button");
                 delBtn.className = "mini secondary";
                 delBtn.textContent = "delete poll";
@@ -17307,6 +17459,19 @@ function alcRenderRecipes() {
                 wrap.appendChild(delBtn);
             }
           })(pid, !!p.pinned);
+          // report this poll to the mods (2026-11-25, suggestion #22 - needs
+          // a rules update before the report write is allowed; see batch report)
+          (function (pollId, poll) {
+            var repBtn = document.createElement("button");
+            repBtn.className = "mini secondary";
+            repBtn.textContent = "report";
+            repBtn.style.fontSize = "12px";
+            repBtn.style.marginLeft = "6px";
+            repBtn.onclick = function () {
+              submitReport(pollId, { text: poll.question || "", name: poll.createdByName || "someone", uid: poll.createdBy || "" }, "polls/" + pollId, "poll");
+            };
+            wrap.appendChild(repBtn);
+          })(pid, p);
           // comments under each poll
           (function (pollId) {
             var cbtn = document.createElement("button");
