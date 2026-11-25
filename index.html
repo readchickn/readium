@@ -52,7 +52,13 @@
     padding: 16px 12px;
     font-size: 17px;
     line-height: 1.45;
+    overflow-x: hidden;
   }
+  /* no image may ever blow the page wider than the screen (2026-11-25,
+     suggestion #47): a too-wide image made the whole screen "really big"
+     and pushed buttons off-screen on narrow devices. Scoped rules (game
+     tiles, pfps) still win on size - this only caps the width. */
+  img { max-width: 100%; height: auto; }
   h1 { font-size: 28px; margin: 0 0 8px 0; }
   h2 { font-size: 22px; margin: 20px 0 8px 0; }
   p  { margin: 0 0 16px 0; }
@@ -309,8 +315,8 @@
   #poll-list .poll-card { display: inline-block; vertical-align: top; width: 46%; margin: 1%; box-sizing: border-box; }
   .rep-row { border: 3px solid #990000; padding: 10px; margin-bottom: 10px; }
   .rep-row p { margin: 0 0 6px 0; font-size: 18px; }
-  #profile-popup, #signin-popup, #help-popup, #missed-popup, #pvp-chal-popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-  #help-popup.hidden, #profile-popup.hidden, #signin-popup.hidden, #missed-popup.hidden, #pvp-chal-popup.hidden, #confirm-popup.hidden, #top-logout.hidden, #user-chip.hidden { display: none !important; }
+  #profile-popup, #signin-popup, #help-popup, #missed-popup, #pvp-chal-popup, #lookup-popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  #help-popup.hidden, #profile-popup.hidden, #signin-popup.hidden, #missed-popup.hidden, #pvp-chal-popup.hidden, #lookup-popup.hidden, #confirm-popup.hidden, #top-logout.hidden, #user-chip.hidden { display: none !important; }
   #help-box { background: #ffffff; border: 3px solid #111111; padding: 18px; max-width: 85%; font-size: 16px; text-align: center; }
   #help-text { margin-bottom: 14px; }
   #confirm-popup {
@@ -338,6 +344,7 @@
   #my-pfp { margin: 10px 0; }
   #pfp-grid {
     width: 320px;
+    max-width: 100%;
     font-size: 0;
     line-height: 0;
     margin: 10px 0;
@@ -645,6 +652,8 @@
   <p id="home-streak" style="font-size:16px"></p>
   <button id="tagline-edit-btn" class="mini secondary hidden">edit tagline</button>
   <button id="messages-btn">messages <span class="dm-dot dot hidden"></span></button>
+  <button id="missed-btn" class="secondary">what you missed</button>
+  <button id="lookup-btn" class="secondary">find someone</button>
   <button id="feast-btn" class="feast-btn">november event</button>
   <button id="games-btn" class="secondary">games</button>
   <button id="hood-btn" class="secondary">neighborhood</button>
@@ -2115,6 +2124,19 @@
   </div>
 </div>
 
+<!-- FIND SOMEONE (user lookup, 2026-11-25, suggestion #41) -->
+<div id="lookup-popup" class="hidden">
+  <div id="lookup-card" style="background:#ffffff;max-width:520px;width:92%;padding:16px;border:2px solid #333333;max-height:85%;overflow:auto;">
+    <h2>find someone</h2>
+    <p style="font-size:15px;">look up any user and open their profile:</p>
+    <input id="lookup-input" type="text" maxlength="20" placeholder="type part of their name..." autocomplete="off">
+    <button id="lookup-search-btn" class="secondary">search</button>
+    <div id="lookup-results"></div>
+    <p id="lookup-msg" style="font-size:16px"></p>
+    <button id="lookup-close-btn" class="secondary">close</button>
+  </div>
+</div>
+
 <!-- ONLINE PANEL -->
 <div id="online-panel" class="hidden">
   <b>online now (<span id="online-count">0</span>)</b>
@@ -2172,6 +2194,8 @@
   var suggestRef = null;
   var suggestOpenRef = null;
   var suggestOpenData = null;
+  var suggestDoneRef = null;
+  var suggestDoneData = null;
   var suggestMainData = null;
   var suggestCommentsRefs = {};
   var suggestType = "idea";
@@ -3358,7 +3382,7 @@
           if (!mentionFirst) {
             var n = v[k] || {};
             var label = n.kind === "follow" ? "posted in the neighborhood"
-              : n.kind === "reply" ? "replied to your post" : "mentioned you";
+              : n.kind === "reply" ? replyNotifLabel(n) : "mentioned you";
             notify("mention", (n.from || "someone") + " " + label + "!", function () { enterMentions(); });
           }
         })(keys[i]);
@@ -3397,13 +3421,14 @@
         b.className = "room-btn secondary";
         var mfrom = cleanName(n.from || "someone", "");
         if (n.kind === "follow") { b.textContent = mfrom + " posted in the neighborhood"; }
-        else if (n.kind === "reply") { b.textContent = mfrom + " replied to your neighborhood post"; }
+        else if (n.kind === "reply") { b.textContent = mfrom + " " + replyNotifLabel(n); }
         else if (n.kind === "all") { b.textContent = mfrom + " pinged everyone in " + (n.title || "chat"); }
         else { b.textContent = mfrom + " mentioned you in " + (n.title || "chat"); }
         b.onclick = function () {
           db.ref("mentionNotifs/" + myUid() + "/" + k).remove();
           if (n.msgId) { pendingJumpMsgId = n.msgId; }
           if ((n.refPath || "") === "hoodPosts") { enterHood(); }
+          else if ((n.refPath || "") === "suggestions") { enterSuggest(); }
           else { openChat(n.refPath, n.title || "chat", (n.refPath || "").indexOf("dms/") === 0 ? "dm" : "msgs"); }
         };
         box.appendChild(b);
@@ -3429,10 +3454,22 @@
 
   /* ---------- what did you miss ---------- */
   var missedChecked = false;
+  /* ---------- reply notification labels (2026-11-25, suggestion #37) ----------
+     "reply" now covers three things: neighborhood post comments (refPath
+     hoodPosts), suggestion comments (refPath suggestions), and chat
+     message replies (refPath rooms/... or dms/...). Label each one so
+     the inbox never says "neighborhood post" for a suggestion or a chat. */
+  function replyNotifLabel(n) {
+    var rp = n.refPath || "";
+    if (rp === "suggestions") { return "replied to your suggestion"; }
+    if (rp === "hoodPosts") { return "replied to your neighborhood post"; }
+    if (rp.indexOf("rooms/") === 0 || rp.indexOf("dms/") === 0) { return "replied to your message in " + (n.title || "chat"); }
+    return "replied to your post";
+  }
   function mentionLabelFor(n) {
     var mfrom = cleanName(n.from || "someone", "");
     if (n.kind === "follow") { return mfrom + " posted in the neighborhood"; }
-    if (n.kind === "reply") { return mfrom + " replied to your neighborhood post"; }
+    if (n.kind === "reply") { return mfrom + " " + replyNotifLabel(n); }
     if (n.kind === "all") { return mfrom + " pinged everyone in " + (n.title || "chat"); }
     return mfrom + " mentioned you in " + (n.title || "chat");
   }
@@ -3460,7 +3497,59 @@
   document.getElementById("missed-close-btn").onclick = function () {
     document.getElementById("missed-popup").className = "hidden";
   };
-  function checkWhatYouMissed() {
+  // manual re-open (2026-11-25, suggestion #38): the popup only fires
+  // once per sign-in on its own, so this button lets you check again.
+  document.getElementById("missed-btn").onclick = function () {
+    missedChecked = false;
+    checkWhatYouMissed(true);
+  };
+  /* ---------- find someone (2026-11-25, suggestion #41) ----------
+     A user lookup for normal users: the only lookups before were the
+     mod-dashboard "find user" and the DM screen's "find someone" (which
+     starts a DM). This one lives on the home screen and opens the
+     person's profile popup on tap. Same partial-name search over the
+     users node as the DM lookup (min 2 letters, skips yourself). */
+  document.getElementById("lookup-btn").onclick = function () {
+    document.getElementById("lookup-popup").className = "";
+    document.getElementById("lookup-input").value = "";
+    document.getElementById("lookup-results").innerHTML = "";
+    document.getElementById("lookup-msg").textContent = "";
+  };
+  document.getElementById("lookup-close-btn").onclick = function () {
+    document.getElementById("lookup-popup").className = "hidden";
+  };
+  document.getElementById("lookup-search-btn").onclick = function () {
+    var q = document.getElementById("lookup-input").value.replace(/^\s+|\s+$/g, "").toLowerCase();
+    var box = document.getElementById("lookup-results");
+    var msg = document.getElementById("lookup-msg");
+    box.innerHTML = "";
+    msg.textContent = "";
+    if (q.length < 2) { msg.textContent = "type at least 2 letters of their name."; return; }
+    var me = myUid();
+    db.ref("users").once("value", function (snap) {
+      var v = snap.val() || {};
+      var found = 0;
+      var uids = Object.keys(v);
+      for (var i = 0; i < uids.length; i++) {
+        (function (uid) {
+          if (uid === me) { return; }
+          var nm = v[uid].name || "";
+          if (nm.toLowerCase().indexOf(q) === -1) { return; }
+          found++;
+          var b = document.createElement("button");
+          b.className = "room-btn secondary";
+          b.textContent = cleanName(nm, uid);
+          b.onclick = function () {
+            document.getElementById("lookup-popup").className = "hidden";
+            showProfilePopup(uid, v[uid]);
+          };
+          box.appendChild(b);
+        })(uids[i]);
+      }
+      if (!found) { msg.textContent = "no matches. they need to log in at least once first."; }
+    });
+  };
+  function checkWhatYouMissed(manual) {
     var uid = myUid();
     if (!uid || missedChecked) { return; }
     missedChecked = true;
@@ -3468,7 +3557,7 @@
     uref.child("lastSeenAt").once("value", function (lsnap) {
       var last = lsnap.val() || 0;
       uref.update({ lastSeenAt: Date.now() });
-      if (!last) { return; } // first sign-in: nothing was "missed"
+      if (!last) { if (manual) { flashNotice("nothing to catch up on yet!"); } return; } // first sign-in: nothing was "missed"
       var items = [];
       var done = 0;
       function finish() {
@@ -3476,6 +3565,7 @@
         if (done < 4) { return; }
         items.sort(function (a, b) { return b.at - a.at; });
         if (items.length) { showMissed(items); }
+        else if (manual) { flashNotice("nothing new since you were last here!"); }
       }
       db.ref("mentionNotifs/" + uid).once("value", function (s) {
         s.forEach(function (ch) {
@@ -3487,7 +3577,7 @@
           }
         });
         finish();
-      });
+      }, function () { finish(); });
       db.ref("dmRequests/" + uid).once("value", function (s) {
         s.forEach(function (ch) {
           var n = ch.val() || {};
@@ -3498,7 +3588,7 @@
           }
         });
         finish();
-      });
+      }, function () { finish(); });
       db.ref("userDms/" + uid).once("value", function (s) {
         var convos = [];
         s.forEach(function (ch) {
@@ -3520,16 +3610,16 @@
               })(d, count, from, mat);
             }
             if (--left === 0) { finish(); }
-          });
+          }, function () { if (--left === 0) { finish(); } });
         });
-      });
+      }, function () { finish(); });
       db.ref("polls").orderByChild("createdAt").startAt(last + 1).once("value", function (s) {
         s.forEach(function (ch) {
           var p = ch.val() || {};
           items.push({ at: p.createdAt || last, label: "new poll: " + String(p.question || "").substring(0, 60), go: function () { enterPolls(); } });
         });
         finish();
-      });
+      }, function () { finish(); });
     });
   }
   function sendMentions(text, msgId) {
@@ -8430,7 +8520,7 @@ function lhWbInit() {
       actionsDiv.appendChild(editBtn);
     }
     wrap.getElementsByClassName("reply-to-btn")[0].onclick = function () {
-      replyTarget = { id: pushId, name: m.name || "Reader", text: m.text || "" };
+      replyTarget = { id: pushId, uid: m.uid || null, name: m.name || "Reader", text: m.text || "" };
       var snip = String(replyTarget.text);
       if (snip.length > 40) { snip = snip.substring(0, 40) + "..."; }
       document.getElementById("reply-text").textContent = "replying to " + replyTarget.name + ": " + snip;
@@ -8636,6 +8726,25 @@ function lhWbInit() {
         }
         clearTyping();
         sendMentions(text, sentRef ? sentRef.key : null);
+        // notify the person you replied to (2026-11-25, suggestion #37).
+        // replyTarget still holds the original message here (cleared
+        // below). Skip it when the message already @mentions them by
+        // name, so they don't get pinged twice for one message.
+        if (replyTarget && replyTarget.uid && replyTarget.uid !== me) {
+          var _rtName = String(replyTarget.name || "").toLowerCase();
+          if (!_rtName || text.toLowerCase().indexOf("@" + _rtName) === -1) {
+            db.ref("mentionNotifs/" + replyTarget.uid).push({
+              kind: "reply",
+              from: displayName(),
+              fromUid: me,
+              title: currentChatTitle,
+              text: String(text).substring(0, 80),
+              refPath: currentRefPath,
+              msgId: sentRef ? sentRef.key : null,
+              at: Date.now()
+            });
+          }
+        }
         input.value = "";
         clearReply();
       });
@@ -17786,11 +17895,13 @@ function alcRenderRecipes() {
     }
     // wild encounter! (weighted by rarity: 60% common, 30% uncommon, 10% rare)
     var wild = critterNew(critterWildPick().id);
-    // scale wild to team strength — can now be stronger than you
-    var avgLvl = 0;
-    critterSave.team.forEach(function (c) { avgLvl += c.lvl; });
-    avgLvl = Math.round(avgLvl / critterSave.team.length);
-    wild.lvl = Math.max(1, avgLvl - 1 + Math.floor(Math.random() * 5));
+    // scale wild to your STRONGEST critter (2026-11-25, suggestion #44):
+    // the old average let a team of one high-level + low-level critters
+    // face easy wilds. Wilds now match your best critter, so they can
+    // be stronger than the rest of your team.
+    var maxLvl = 0;
+    critterSave.team.forEach(function (c) { if (c.lvl > maxLvl) { maxLvl = c.lvl; } });
+    wild.lvl = Math.max(1, maxLvl - 1 + Math.floor(Math.random() * 5));
     wild.maxHp = Math.round(wild.maxHp * (1 + (wild.lvl - 1) * 0.15));
     wild.hp = wild.maxHp;
     wild.atk = Math.round(wild.atk * (1 + (wild.lvl - 1) * 0.12));
@@ -19414,6 +19525,8 @@ function alcRenderRecipes() {
     var merged = {};
     var d = suggestOpenData || {};
     for (var k in d) { if (d.hasOwnProperty(k)) { merged[k] = d[k]; } }
+    d = suggestDoneData || {};
+    for (var k in d) { if (d.hasOwnProperty(k)) { merged[k] = d[k]; } }
     d = suggestMainData || {};
     for (var k2 in d) { if (d.hasOwnProperty(k2)) { merged[k2] = d[k2]; } }
     suggestData = merged;
@@ -19425,6 +19538,7 @@ function alcRenderRecipes() {
     document.getElementById("suggest-msg").textContent = "";
     if (suggestRef) { suggestRef.off(); }
     if (suggestOpenRef) { suggestOpenRef.off(); }
+    if (suggestDoneRef) { suggestDoneRef.off(); }
     for (var k in suggestCommentsRefs) { suggestCommentsRefs[k].off(); }
     suggestCommentsRefs = {};
     suggestRef = db.ref("suggestions").orderByChild("ts").limitToLast(100);
@@ -19436,6 +19550,14 @@ function alcRenderRecipes() {
     suggestOpenRef = db.ref("suggestions").orderByChild("done").endAt(false);
     suggestOpenRef.on("value", function (snap) {
       suggestOpenData = snap.val() || {};
+      mergeSuggestData();
+    });
+    // third query: every DONE item, so older completed suggestions stay
+    // on the done tab (and stay votable) instead of vanishing once they
+    // fall out of the 100 newest. (2026-11-25, suggestion #39)
+    suggestDoneRef = db.ref("suggestions").orderByChild("done").equalTo(true);
+    suggestDoneRef.on("value", function (snap) {
+      suggestDoneData = snap.val() || {};
       mergeSuggestData();
     });
   }
@@ -19656,6 +19778,21 @@ function alcRenderRecipes() {
             if (err) { flashNotice("couldn't post that comment. try again."); return; }
             inp.value = "";
             grantXp(2, "comment", 30000);
+            // notify the suggestion author (2026-11-25, suggestion #37):
+            // hood post comments already did this, suggestion comments
+            // didn't, so authors never knew someone replied.
+            var srec = (suggestData || {})[id] || {};
+            if (srec.uid && srec.uid !== me) {
+              db.ref("mentionNotifs/" + srec.uid).push({
+                kind: "reply",
+                from: displayName(),
+                fromUid: me,
+                title: "suggestions",
+                text: String(body).substring(0, 80),
+                refPath: "suggestions",
+                at: Date.now()
+              });
+            }
           }
         );
       });
