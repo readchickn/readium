@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>chickn's blog</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
   body { margin: 0; background: #ffffff; color: #111111; font-family: Georgia, serif; }
   html, body { overflow-x: hidden; }
@@ -14,6 +17,10 @@
   a { color: #111111; }
   .topbar { font-size: 15px; margin: 4px 0 10px 0; }
   .hidden { display: none; }
+  input, textarea { font-family: Georgia, serif; font-size: 16px; border: 3px solid #111111; padding: 8px; box-sizing: border-box; width: 100%; }
+  .btn { display: block; width: 100%; font-family: Georgia, serif; font-size: 17px; font-weight: bold; background: #ffffff; color: #111111; border: 3px solid #111111; padding: 10px; cursor: pointer; margin: 8px 0; box-sizing: border-box; }
+  .btn.small { width: auto; display: inline-block; padding: 6px 14px; font-size: 15px; }
+  .err { color: #b00000; font-size: 15px; margin: 6px 0; }
   /* tile grid */
   .tiles { display: flex; flex-wrap: wrap; gap: 12px; }
   .tile { width: 200px; border: 3px solid #111111; background: #ffffff; cursor: pointer; box-sizing: border-box; }
@@ -28,6 +35,20 @@
   .arrow { flex: 0 0 auto; font-size: 36px; line-height: 1; cursor: pointer; color: #111111; user-select: none; padding: 0 2px; }
   .arrow.off { color: #cccccc; cursor: default; }
   .hint { font-size: 14px; color: #444444; text-align: center; margin: 8px 0 0 0; }
+  /* comments */
+  .comments { margin-top: 18px; border-top: 3px solid #111111; padding-top: 8px; }
+  .comments h2 { margin: 6px 0; }
+  .comment { display: flex; gap: 8px; border: 2px solid #111111; padding: 8px; margin: 8px 0; box-sizing: border-box; }
+  .comment img.pfp { width: 28px; height: 28px; flex: 0 0 auto; image-rendering: pixelated; border: 2px solid #111111; }
+  .comment .cbody { flex: 1 1 auto; min-width: 0; }
+  .comment .cname { font-weight: bold; font-size: 15px; }
+  .comment .cname.mod { text-decoration: underline; }
+  .comment .ctime { font-size: 13px; color: #444444; font-weight: normal; }
+  .comment .ctext { font-size: 16px; margin: 2px 0 0 0; overflow-wrap: break-word; }
+  .comment .cdel { font-size: 14px; cursor: pointer; color: #b00000; }
+  .signinbox { border: 2px solid #111111; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+  .signinbox input { margin: 4px 0; }
+  .whoami { font-size: 15px; margin: 6px 0; }
 </style>
 </head>
 <body>
@@ -49,16 +70,241 @@
       <span class="arrow" id="blog-next">&rarr;</span>
     </div>
     <p class="hint">tap the arrows to flip pages</p>
+
+    <div class="comments" id="blog-comments">
+      <h2>comments</h2>
+      <div id="blog-signin" class="signinbox">
+        <div style="font-size:15px;margin-bottom:4px;">sign in with your readium account to comment</div>
+        <input id="blog-user" type="text" placeholder="username" autocomplete="username">
+        <input id="blog-pass" type="password" placeholder="password" autocomplete="current-password">
+        <button class="btn" id="blog-signin-btn" type="button">sign in</button>
+        <div class="err" id="blog-signin-err"></div>
+      </div>
+      <div id="blog-whoami" class="whoami hidden"></div>
+      <div id="blog-comment-form" class="hidden">
+        <textarea id="blog-comment-text" rows="3" maxlength="300" placeholder="leave a comment..."></textarea>
+        <button class="btn" id="blog-comment-btn" type="button">post comment</button>
+        <div class="err" id="blog-comment-err"></div>
+      </div>
+      <div id="blog-comment-list"><p>loading comments...</p></div>
+    </div>
   </div>
 </div>
 
 <script>
-var POSTS = [{"title": "About Me!!", "cover": "blog/about-me-1.jpg", "pages": ["blog/about-me-1.jpg", "blog/about-me-2.jpg", "blog/about-me-3.jpg", "blog/about-me-4.jpg", "blog/about-me-5.jpg", "blog/about-me-6.jpg", "blog/about-me-7.jpg"]}];
+var POSTS = [{"id": "about-me", "title": "About Me!!", "cover": "blog/about-me-1.jpg", "pages": ["blog/about-me-1.jpg", "blog/about-me-2.jpg", "blog/about-me-3.jpg", "blog/about-me-4.jpg", "blog/about-me-5.jpg", "blog/about-me-6.jpg", "blog/about-me-7.jpg"]}, {"id": "another-blog-ig", "title": "another blog ig.", "cover": "blog/november-1.jpg", "pages": ["blog/november-1.jpg", "blog/november-2.jpg", "blog/november-3.jpg", "blog/november-4.jpg", "blog/november-5.jpg", "blog/november-6.jpg", "blog/november-7.jpg", "blog/november-8.jpg", "blog/november-9.jpg"]}];
 var curPost = -1;
 var curPage = 0;
 
+/* ---------- firebase (same project as the main site) ---------- */
+var firebaseConfig = {
+    apiKey: "AIzaSyBM8k1SltnksCRZ5NvgggfQ952H3DZIyDY",
+    authDomain: "readium-33755.firebaseapp.com",
+    databaseURL: "https://readium-33755-default-rtdb.firebaseio.com",
+    projectId: "readium-33755",
+    storageBucket: "readium-33755.firebasestorage.app",
+    messagingSenderId: "1062133935488",
+    appId: "1:1062133935488:web:a00716635022a998f32565"
+  }
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.database();
+var FOUNDER_UID = "393cJa8SHXbuHTX4CTBf2yS4ePi1";
+var FOUNDER_UID2 = "m9vGjZaNSVe1ofNotoUhuEx32BY2";
+var modUids = {};
+var helperUids = {};
+var myUid = null;
+var myName = "Reader";
+
+/* ---------- word filter (same as the main site) ---------- */
+var BANNED = ["fuck","fucking","fucker","motherfucker","shit","shitty","shite","bitch","bitches","bitchy","ass","asshole","asshead","asswipe","dick","dickhead","pussy","cunt","whore","slut","slutty","bastard","tits","titty","boob","boobs","cock","cocksucker","cum","dildo","porn","pornhub","onlyfans","hentai",
+    "nigger","nigga","nibba","niglet","faggot","fag","kike","spic","chink","gook","wetback","beaner","towelhead","redskin","paki","coon","retard","retarded","dyke","tranny","shemale","ladyboy","midget","nazi","hitler","kkk","schizo",
+    "skank","thot","bimbo","hoe","cuck","prick","twat","smut","wanker","douche","douchebag",
+    "blowjob","handjob","orgasm","vagina","penis","nipple","clit","jizz","wank","jerkoff","ejaculate","semen","queef","creampie","deepthroat","doggystyle",
+    "anal","rape","rapist","molest","molester","incest","pedo","nsfw","nudes","naked","sexting","erotic","fetish","kinky","bdsm","aroused",
+    "panties","lingerie","stripper","hooker","prostitute","pimp","sugardaddy",
+    "shithead","fuckhead","dumbass","jackass","dipshit","bullshit","horseshit","apeshit","butthole","piss","suck",
+    "dox","doxx","swatting","kys","kms","gyp","gypped",
+    "horny","masturbate","sexy"];
+  function leetReplace(s) {
+    return String(s).toLowerCase()
+      .replace(/0/g, "o").replace(/1/g, "i").replace(/2/g, "z").replace(/3/g, "e").replace(/4/g, "a")
+      .replace(/5/g, "s").replace(/6/g, "g").replace(/7/g, "t").replace(/8/g, "b").replace(/9/g, "g")
+      .replace(/@/g, "a").replace(/\$/g, "s")
+      .replace(/!/g, "i").replace(/\+/g, "t");
+  }
+  function lightNorm(s) { return leetReplace(s).replace(/(.)\1+/g, "$1"); }
+  function aggroNorm(s) { return lightNorm(s).replace(/[^a-z]/g, ""); }
+  var BANNED_NORM = [];
+  for (var bi = 0; bi < BANNED.length; bi++) { BANNED_NORM.push(aggroNorm(BANNED[bi])); }
+  /* innocent words that happen to contain a banned chunk.
+     NOTE: safe words use gentle normalization (no repeat-collapse, no leet) so that
+     e.g. "bass" does not become "bas" and strip the "bas" out of "bastard"/"dumbass". */
+  var SAFE_WORDS = ["password","classic","class","pass","grass","mass","bass","assist","asset","document","cucumber","title","peacock","scunthorpe","shitake","cocktail",
+    "analyze","analysis","analogy","banal","canal",
+    "analyzing","analyzed","analyzes","analyse","analysing","analyses","analyst","analysts","analogies",
+    "grape","scrape","drape","trapeze",
+    "torpedo","pedometer","speedometer","spedomter",
+    "spice","spicy","auspicious","despicable","conspicuous",
+    "raccoon","raccoons","tycoon","cocoon","cuckoo","cucko"];
+  var SAFE_NORM = [];
+  for (var si = 0; si < SAFE_WORDS.length; si++) { SAFE_NORM.push(SAFE_WORDS[si].toLowerCase().replace(/[^a-z]/g, "")); }
+  /* short banned words get a fuzzy boundary check so "was"/"has"/"ask" don't trip it */
+  function fuzzyShortRe(norm) {
+    return new RegExp("(^|[^a-z])" + norm.split("").join("[^a-z]*") + "([^a-z]|$)");
+  }
+  /* innocent standalone words whose collapsed form equals a short banned word
+     ("ass"->"as", "kkk"->"k", "boob"->"bob", "coon"->"con"). they are blanked
+     out of the RAW text before the fuzzy check, so only their plain spelling
+     is excused: leet ("a55", "b00b", "c00n") and spaced ("a s s") versions
+     never appear as plain words in the raw text and are still caught.
+     3+ standalone k's in a row ("k k k") are NOT excused. */
+  function fuzzyLight(s) {
+    var raw = String(s).toLowerCase();
+    var toks = raw.split(/[^a-z]+/);
+    var kCount = 0;
+    for (var i = 0; i < toks.length; i++) {
+      if (toks[i] === "k") { kCount++; }
+      else if (toks[i] === "kk") { kCount += 2; }
+    }
+    var re = (kCount >= 3) ? /\b(as|bob|con)\b/g : /\b(as|kk|k|bob|con)\b/g;
+    return lightNorm(raw.replace(re, " "));
+  }
+  function filterHit(s) {
+    var light = lightNorm(s);
+    var n = light.replace(/[^a-z]/g, "");
+    for (var i = 0; i < SAFE_NORM.length; i++) {
+      if (SAFE_NORM[i]) { n = n.split(SAFE_NORM[i]).join(""); }
+    }
+    var fl = null;
+    for (var j = 0; j < BANNED_NORM.length; j++) {
+      var b = BANNED_NORM[j];
+      if (!b) { continue; }
+      if (b.length >= 4) {
+        if (n.indexOf(b) !== -1) { return true; }
+      } else {
+        if (fl === null) { fl = fuzzyLight(s); }
+        if (fuzzyShortRe(b).test(fl)) { return true; }
+      }
+    }
+    return false;
+  }
+  function hasBannedWord(s) { return filterHit(s); }
+  /* simple inline starring for the obvious cases */
+  var BANNED_RE = new RegExp("\\b(" + BANNED.join("|") + ")\\b", "gi");
+  function censor(s) { return String(s).replace(BANNED_RE, "****"); }
+  /* display-time username screening: dirty names show as readerXXXX instead */
+  function cleanName(name, uid) {
+    var nm = String(name == null ? "Reader" : name);
+    if (!filterHit(nm)) { return nm; }
+    var suf = String(uid || "").replace(/[^a-zA-Z0-9]/g, "").substring(0, 4);
+    return "reader" + (suf || "anon");
+  }
+
+/* ---------- sign-in helpers (same as the main site) ---------- */
+function validUsername(u) { return /^[a-z0-9._-]{3,20}$/.test(u); }
+function loginEmail(username) { return username + "@readium.chat"; }
+function friendlyAuthError(err) {
+  var code = err && err.code ? err.code : "";
+  if (code === "auth/user-not-found" || code === "auth/invalid-credential") {
+    return "No account with that username.";
+  }
+  if (code === "auth/wrong-password") { return "Wrong password. Try again."; }
+  if (code === "auth/too-many-requests") { return "Too many tries. Wait a bit and try again."; }
+  return "Something went wrong: " + (err.message || code);
+}
+
+/* ---------- pfps (16x16 pixel art, same as the main site) ---------- */
+var PALETTE = ["#ffffff", "#bbbbbb", "#666666", "#111111"];
+var pfpCache = {};
+function blankPfp() {
+  var rows = [
+    "1111111111111111",
+    "1111111111111111",
+    "1131111111111311",
+    "1131111111111311",
+    "1111111111111111",
+    "1111111111111111",
+    "1111111111111111",
+    "1111311111113111",
+    "1111133333331111",
+    "1111111111111111",
+    "1111111111111111",
+    "1111111111111111",
+    "1111111111111111",
+    "1111111111111111",
+    "1111111111111111",
+    "1111111111111111"
+  ];
+  return rows.join("");
+}
+function pfpURL(pfpStr) {
+  if (typeof pfpStr !== "string" || pfpStr.length !== 256 || /[^0-3]/.test(pfpStr)) {
+    pfpStr = blankPfp();
+  }
+  if (pfpCache[pfpStr]) { return pfpCache[pfpStr]; }
+  var url = "";
+  try {
+    var cv = document.createElement("canvas");
+    cv.width = 16; cv.height = 16;
+    var ctx = cv.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 16, 16);
+    for (var y = 0; y < 16; y++) {
+      for (var x = 0; x < 16; x++) {
+        var ci = pfpStr.charAt(y * 16 + x);
+        if ("123".indexOf(ci) !== -1) {
+          ctx.fillStyle = PALETTE[parseInt(ci, 10)];
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+    url = cv.toDataURL("image/png");
+  } catch (e) { url = ""; }
+  if (!url) { url = pfpURL(blankPfp()); }
+  pfpCache[pfpStr] = url;
+  return url;
+}
+var pfpUserCache = {};
+function fillPfpImg(img, uid) {
+  if (!uid) { img.src = pfpURL(blankPfp()); return; }
+  if (pfpUserCache[uid]) { img.src = pfpURL(pfpUserCache[uid]); return; }
+  img.src = pfpURL(blankPfp());
+  db.ref("users/" + uid + "/pfp").once("value", function (snap) {
+    var s = snap.val() || blankPfp();
+    pfpUserCache[uid] = s;
+    try { img.src = pfpURL(s); } catch (e) {}
+  }, function () {});
+}
+
+/* ---------- mods ---------- */
+function isFounderUid(uid) { return !!uid && (uid === FOUNDER_UID || uid === FOUNDER_UID2); }
+function isModUid(uid) {
+  if (isFounderUid(uid)) { return true; }
+  return !!(uid && modUids[uid]);
+}
+function canModerate() {
+  if (!myUid) { return false; }
+  if (isFounderUid(myUid)) { return true; }
+  return !!(modUids[myUid] || helperUids[myUid]);
+}
+function loadModLists() {
+  db.ref("mods").once("value", function (s) {
+    var v = s.val() || {};
+    modUids = {};
+    for (var k in v) { if (v[k]) { modUids[k] = true; } }
+  }, function () {});
+  db.ref("helpers").once("value", function (s) {
+    var v = s.val() || {};
+    helperUids = {};
+    for (var k in v) { if (v[k]) { helperUids[k] = true; } }
+  }, function () {});
+}
+
+/* ---------- post view ---------- */
 function showTiles() {
   curPost = -1;
+  detachComments();
   document.getElementById("blog-tiles").className = "";
   document.getElementById("blog-post").className = "hidden";
 }
@@ -68,6 +314,7 @@ function openPost(i) {
   document.getElementById("blog-tiles").className = "hidden";
   document.getElementById("blog-post").className = "";
   renderPage();
+  attachComments();
 }
 function renderPage() {
   var post = POSTS[curPost];
@@ -100,6 +347,156 @@ document.addEventListener("keydown", function (e) {
   if (e.key === "ArrowLeft") { goPrev(); }
   if (e.key === "ArrowRight") { goNext(); }
 });
+
+/* ---------- comments ---------- */
+var commentsRef = null;
+var commentsCache = {};
+function postId() {
+  return curPost < 0 ? null : POSTS[curPost].id;
+}
+function fmtTime(ts) {
+  try {
+    var d = new Date(ts || 0);
+    return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  } catch (e) { return ""; }
+}
+function detachComments() {
+  if (commentsRef) { commentsRef.off(); commentsRef = null; }
+  commentsCache = {};
+}
+function attachComments() {
+  detachComments();
+  var pid = postId();
+  if (!pid) { return; }
+  var list = document.getElementById("blog-comment-list");
+  list.innerHTML = "<p>loading comments...</p>";
+  commentsRef = db.ref("blogComments/" + pid).limitToLast(100);
+  commentsRef.on("value", function (snap) {
+    commentsCache = snap.val() || {};
+    renderComments();
+  }, function () {
+    list.innerHTML = "<p>couldn't load comments.</p>";
+  });
+}
+function renderComments() {
+  var list = document.getElementById("blog-comment-list");
+  list.innerHTML = "";
+  var keys = Object.keys(commentsCache);
+  if (!keys.length) {
+    list.innerHTML = "<p>no comments yet — be the first!</p>";
+    return;
+  }
+  keys.sort(function (a, b) { return (commentsCache[a].ts || 0) - (commentsCache[b].ts || 0); });
+  for (var i = 0; i < keys.length; i++) {
+    (function (cid) {
+      var c = commentsCache[cid];
+      var row = document.createElement("div");
+      row.className = "comment";
+      var img = document.createElement("img");
+      img.className = "pfp";
+      img.alt = "";
+      fillPfpImg(img, c.uid);
+      var body = document.createElement("div");
+      body.className = "cbody";
+      var name = document.createElement("div");
+      name.className = "cname" + (isModUid(c.uid) ? " mod" : "");
+      name.textContent = cleanName(c.name, c.uid);
+      var time = document.createElement("span");
+      time.className = "ctime";
+      time.textContent = "  " + fmtTime(c.ts);
+      name.appendChild(time);
+      var text = document.createElement("div");
+      text.className = "ctext";
+      text.textContent = c.text || "";
+      body.appendChild(name);
+      body.appendChild(text);
+      row.appendChild(img);
+      row.appendChild(body);
+      if (myUid && (c.uid === myUid || canModerate())) {
+        var del = document.createElement("span");
+        del.className = "cdel";
+        del.textContent = "delete";
+        del.onclick = function () {
+          if (!postId()) { return; }
+          db.ref("blogComments/" + postId() + "/" + cid).remove();
+        };
+        row.appendChild(del);
+      }
+      list.appendChild(row);
+    })(keys[i]);
+  }
+}
+function refreshAuthUI() {
+  var signedIn = !!myUid;
+  document.getElementById("blog-signin").className = signedIn ? "signinbox hidden" : "signinbox";
+  document.getElementById("blog-whoami").className = signedIn ? "whoami" : "whoami hidden";
+  document.getElementById("blog-comment-form").className = signedIn ? "" : "hidden";
+  if (signedIn) {
+    var w = document.getElementById("blog-whoami");
+    w.textContent = "";
+    var span = document.createElement("span");
+    span.textContent = "signed in as " + myName + " ";
+    var out = document.createElement("span");
+    out.style.cursor = "pointer";
+    out.style.textDecoration = "underline";
+    out.textContent = "log out";
+    out.onclick = function () { auth.signOut(); };
+    w.appendChild(span);
+    w.appendChild(out);
+  }
+  renderComments();
+}
+document.getElementById("blog-signin-btn").onclick = function () {
+  var u = document.getElementById("blog-user").value.trim().toLowerCase();
+  var p = document.getElementById("blog-pass").value;
+  var err = document.getElementById("blog-signin-err");
+  err.textContent = "";
+  if (!validUsername(u)) { err.textContent = "usernames are 3-20 lowercase letters, numbers, . _ -"; return; }
+  if (!p) { err.textContent = "enter your password."; return; }
+  auth.signInWithEmailAndPassword(loginEmail(u), p).catch(function (e) {
+    err.textContent = friendlyAuthError(e);
+  });
+};
+document.getElementById("blog-comment-btn").onclick = function () {
+  var ta = document.getElementById("blog-comment-text");
+  var err = document.getElementById("blog-comment-err");
+  err.textContent = "";
+  if (!myUid) { err.textContent = "sign in first."; return; }
+  var text = ta.value.trim();
+  if (!text) { return; }
+  if (text.length > 300) { err.textContent = "keep it under 300 characters."; return; }
+  if (filterHit(text)) { err.textContent = "keep it clean!"; return; }
+  var pid = postId();
+  if (!pid) { return; }
+  db.ref("blogComments/" + pid).push({
+    uid: myUid,
+    name: myName,
+    text: text,
+    ts: Date.now()
+  }, function (e) {
+    if (e) { err.textContent = "couldn't post. try again."; return; }
+    ta.value = "";
+  });
+};
+auth.onAuthStateChanged(function (user) {
+  if (!user) {
+    myUid = null;
+    myName = "Reader";
+    modUids = {};
+    helperUids = {};
+    refreshAuthUI();
+    return;
+  }
+  myUid = user.uid;
+  myName = user.displayName || "Reader";
+  loadModLists();
+  db.ref("users/" + user.uid + "/name").once("value", function (s) {
+    if (s.val()) { myName = s.val(); }
+    refreshAuthUI();
+  }, function () { refreshAuthUI(); });
+  refreshAuthUI();
+});
+refreshAuthUI();
 
 // build the tiles
 (function () {
