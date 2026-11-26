@@ -652,8 +652,6 @@
   <p id="home-streak" style="font-size:16px"></p>
   <button id="tagline-edit-btn" class="mini secondary hidden">edit tagline</button>
   <button id="messages-btn">messages <span class="dm-dot dot hidden"></span></button>
-  <button id="missed-btn" class="secondary">what you missed</button>
-  <button id="lookup-btn" class="secondary">find someone</button>
   <button id="feast-btn" class="feast-btn">november event</button>
   <button id="games-btn" class="secondary">games</button>
   <button id="hood-btn" class="secondary">neighborhood</button>
@@ -1005,6 +1003,7 @@
   <textarea id="hood-input" maxlength="1000" placeholder="share something..." autocomplete="off" rows="2" style="resize:vertical"></textarea>
   <button id="hood-post-btn">post</button>
   <div id="hood-msg"></div>
+  <div style="margin-bottom:8px"><label for="hood-sort" style="font-size:15px">sort by: </label><select id="hood-sort"><option value="new">newest first</option><option value="old">oldest first</option></select></div>
   <div id="hood-feed"><p>loading...</p></div>
   <button id="hood-home-btn" class="secondary">home</button>
 </div>
@@ -1015,17 +1014,10 @@
   <div><button id="suggest-top-home-btn" class="mini secondary">home</button></div>
   <p style="font-size:16px">ideas and bug reports. vote for the ones you want!</p>
   <input id="suggest-input" type="text" maxlength="300" placeholder="your idea or bug..." autocomplete="off">
-  <div>
-    <button class="mini secondary sug-type sel" data-t="idea">idea</button>
-    <button class="mini secondary sug-type" data-t="bug">bug</button>
-  </div>
+  <div style="margin-bottom:8px"><label for="suggest-type-sel" style="font-size:15px">post as: </label><select id="suggest-type-sel"><option value="idea">idea</option><option value="bug">bug</option></select></div>
   <button id="suggest-post-btn">post</button>
   <div id="suggest-msg"></div>
-  <div>
-    <button class="mini sug-tab sel" data-tab="open">open</button>
-    <button class="mini secondary sug-tab" data-tab="done">completed</button>
-    <button class="mini secondary sug-tab" data-tab="rejected">rejected</button>
-  </div>
+  <div style="margin-bottom:8px"><label for="suggest-tab-sel" style="font-size:15px">show: </label><select id="suggest-tab-sel"><option value="open">open</option><option value="done">completed</option><option value="rejected">rejected</option></select></div>
   <div id="suggest-list"><p>loading...</p></div>
   <button id="suggest-home-btn" class="secondary">home</button>
 </div>
@@ -1069,6 +1061,7 @@
   <h2>conversations</h2>
   <input id="dm-convo-search" type="text" maxlength="20" placeholder="search your chats..." autocomplete="off">
   <div id="dm-convos"><p>none yet</p></div>
+  <button id="lookup-btn" class="secondary">find someone</button>
   <h2>find someone</h2>
   <input id="dm-lookup" type="text" maxlength="20" placeholder="type part of their name..." autocomplete="off">
   <button id="dm-search-btn" class="secondary">search</button>
@@ -1158,6 +1151,7 @@
   <h2>account review</h2>
   <p style="font-size:15px">go through every account one at a time. check their bio, then accept them, deny them, or flag them if you're not sure — flagged accounts go in their own list. denied accounts are banned. appeals from banned accounts show up here too.</p>
   <div style="display:flex;gap:8px;margin-bottom:8px"><button id="dash-review-tab-queue" class="secondary">review queue</button><button id="dash-review-tab-flagged" class="secondary">flagged</button><button id="dash-review-tab-appeals" class="secondary">appeals</button></div>
+  <div style="margin-bottom:8px"><label for="review-sort" style="font-size:15px">sort by: </label><select id="review-sort"><option value="new">newest joined first</option><option value="old">oldest joined first</option></select></div>
   <div id="dash-review-box"><p>loading...</p></div>
   </div>
   <button id="dash-home-btn" class="secondary">home</button>
@@ -1884,7 +1878,7 @@
 
 <!-- LIFE SIM -->
 <div id="life-screen" class="hidden">
-  <h1>life sim</h1> <button class="mini secondary game-help-btn" data-help="life sim: live a whole life! school, job, love, kids, try not to die.">?</button>
+  <h1>life sim</h1> <button class="mini secondary game-help-btn" data-help="life sim: live a whole life! school, job, love, kids, try not to die. you earn xp when your life ends.">?</button>
   <div id="life-start">
     <label for="life-name-input">your name</label>
     <input id="life-name-input" type="text" maxlength="16" placeholder="leave blank for random" autocomplete="off">
@@ -2169,6 +2163,7 @@
   } catch (e) {}
 
   var messagesRef = null;
+  var messagesQuery = null; // the limitToLast(50) query for the chat listener — kept so it can be offed (ref.off() alone does not detach listeners attached to a derived query, 2026-11-25 suggestion #57).
   var roomListRef = null;
   var openGamesRef = null;
   var dmReqRef = null;
@@ -2188,6 +2183,9 @@
   var dashBansRef = null;
   var hoodFeedRef = null;
   var hoodCommentsRefs = {};
+  var hoodSort = "new"; // (2026-11-25, suggestion #58) neighborhood sort: "new" = newest first, "old" = oldest first
+  var hoodPostsCache = {}; // all loaded posts, keyed by post id — the sort re-renders from here
+  var hoodInitialDone = false;
   var banMinutes = 10;
   var wantHood = false;
   var wantSuggest = false;
@@ -3014,6 +3012,7 @@
 
   function stopAll() {
     if (messagesRef) { messagesRef.off(); messagesRef = null; }
+    if (messagesQuery) { messagesQuery.off(); messagesQuery = null; }
     if (roomListRef) { roomListRef.off(); roomListRef = null; }
     if (openGamesRef) { openGamesRef.off(); openGamesRef = null; }
     if (dmReqRef) { dmReqRef.off(); dmReqRef = null; }
@@ -3126,6 +3125,10 @@
     refreshHome();
     showScreen("home-screen");
     loadTagline();
+    // (2026-11-25) the "what you missed" popup runs on every home
+    // load now, not just once per sign-in — lastSeenAt is the gate, so
+    // it only shows when something is actually new.
+    checkWhatYouMissed();
   }
   document.getElementById("msgs-home-btn").onclick = goHome;
   document.getElementById("chat-home-btn").onclick = goHome;
@@ -3453,7 +3456,13 @@
   };
 
   /* ---------- what did you miss ---------- */
-  var missedChecked = false;
+  // (2026-11-25) the "what you missed" popup used to fire once per
+  // sign-in (missedChecked) and needed a manual button to re-check.
+  // Now it runs on every home-screen load and every sign-in instead —
+  // lastSeenAt is the real gate, so it only pops up when something is
+  // actually new. missedRunning just keeps two checks from running at
+  // once.
+  var missedRunning = false;
   /* ---------- reply notification labels (2026-11-25, suggestion #37) ----------
      "reply" now covers three things: neighborhood post comments (refPath
      hoodPosts), suggestion comments (refPath suggestions), and chat
@@ -3497,18 +3506,13 @@
   document.getElementById("missed-close-btn").onclick = function () {
     document.getElementById("missed-popup").className = "hidden";
   };
-  // manual re-open (2026-11-25, suggestion #38): the popup only fires
-  // once per sign-in on its own, so this button lets you check again.
-  document.getElementById("missed-btn").onclick = function () {
-    missedChecked = false;
-    checkWhatYouMissed(true);
-  };
   /* ---------- find someone (2026-11-25, suggestion #41) ----------
      A user lookup for normal users: the only lookups before were the
      mod-dashboard "find user" and the DM screen's "find someone" (which
-     starts a DM). This one lives on the home screen and opens the
-     person's profile popup on tap. Same partial-name search over the
-     users node as the DM lookup (min 2 letters, skips yourself). */
+     starts a DM). This one opens the person's profile popup on tap.
+     Same partial-name search over the users node as the DM lookup (min
+     2 letters, skips yourself). Button moved from home to the DM screen
+     2026-11-25. */
   document.getElementById("lookup-btn").onclick = function () {
     document.getElementById("lookup-popup").className = "";
     document.getElementById("lookup-input").value = "";
@@ -3549,23 +3553,24 @@
       if (!found) { msg.textContent = "no matches. they need to log in at least once first."; }
     });
   };
-  function checkWhatYouMissed(manual) {
+  function checkWhatYouMissed() {
     var uid = myUid();
-    if (!uid || missedChecked) { return; }
-    missedChecked = true;
+    if (!uid) { return; }
+    if (missedRunning) { return; }
+    missedRunning = true;
     var uref = db.ref("users/" + uid);
     uref.child("lastSeenAt").once("value", function (lsnap) {
       var last = lsnap.val() || 0;
       uref.update({ lastSeenAt: Date.now() });
-      if (!last) { if (manual) { flashNotice("nothing to catch up on yet!"); } return; } // first sign-in: nothing was "missed"
+      if (!last) { missedRunning = false; return; } // first sign-in: nothing was "missed"
       var items = [];
       var done = 0;
       function finish() {
         done++;
         if (done < 4) { return; }
+        missedRunning = false;
         items.sort(function (a, b) { return b.at - a.at; });
         if (items.length) { showMissed(items); }
-        else if (manual) { flashNotice("nothing new since you were last here!"); }
       }
       db.ref("mentionNotifs/" + uid).once("value", function (s) {
         s.forEach(function (ch) {
@@ -3620,7 +3625,7 @@
         });
         finish();
       }, function () { finish(); });
-    });
+    }, function () { missedRunning = false; });
   }
   function sendMentions(text, msgId) {
     // @all: ping everyone who recently chatted in this room (not DMs).
@@ -4671,6 +4676,7 @@
     });
   }
   var dashSearchTimer = null;
+  var dashSearchSeq = 0; // (2026-11-25, suggestion #67) search sequence: stale results must never wipe fresh ones
   function dashAwardBadge(uid, name) {
     askConfirm("Badge ID for " + name + "?\n(oct2026-gold, oct2026-silver, oct2026-bronze, oct2026-team)", function (bid) {
       if (!bid || !BADGE_DEFS[bid]) { flashNotice("unknown badge id."); return; }
@@ -4685,7 +4691,12 @@
     var q = String(input.value || "").trim().toLowerCase();
     if (q.length < 2) { box.innerHTML = ""; return; }
     box.innerHTML = "<p>searching...</p>";
+    var _seq = ++dashSearchSeq;
     db.ref("users").once("value", function (snap) {
+      // (2026-11-25, suggestion #67) the search is debounced: a slow
+      // read from an earlier keystroke could land after a newer one and
+      // wipe the fresh results with stale ones. Ignore stale callbacks.
+      if (_seq !== dashSearchSeq) { return; }
       var v = snap.val() || {};
       var keys = Object.keys(v).filter(function (uid) {
         var nm = (v[uid] && v[uid].name) || "";
@@ -4696,6 +4707,7 @@
       keys.forEach(function (uid) {
         (function (u, rec) {
           db.ref("xp/" + u).once("value", function (xsnap) {
+            if (_seq !== dashSearchSeq) { return; }
             var xv = xsnap.val();
             var xpAmt = (xv && typeof xv.xp === "number") ? xv.xp : 0;
             var b = document.createElement("button");
@@ -4705,7 +4717,10 @@
             b.onclick = function () {
               document.getElementById("dash-xp-user").value = rec.name || "";
               input.value = "";
-              box.innerHTML = "";
+              // (2026-11-25, suggestion #67) the old code wiped the whole
+              // results list on tap, so the name just vanished with no
+              // trace of what was picked — keep the pick visible instead.
+              box.innerHTML = "<p>selected <b>" + escapeHtml(rec.name || "?") + "</b>.</p>";
               flashNotice("selected " + (rec.name || "?"));
             };
             var ab = document.createElement("button");
@@ -5129,6 +5144,7 @@
   document.getElementById("dash-review-tab-queue").onclick = function () { reviewTab = "queue"; renderReviewTab(); };
   document.getElementById("dash-review-tab-flagged").onclick = function () { reviewTab = "flagged"; renderReviewTab(); };
   document.getElementById("dash-review-tab-appeals").onclick = function () { reviewTab = "appeals"; renderReviewTab(); };
+  document.getElementById("review-sort").onchange = function () { reviewSort = this.value; buildReviewQueue(); renderReviewTab(); };
   document.getElementById("dash-bans-toggle").onclick = function () {
     var w = document.getElementById("dash-bans-wrap");
     var t = document.getElementById("dash-bans-toggle");
@@ -7737,14 +7753,40 @@ function lhWbInit() {
       if (timeOnSiteSeeding) { return; }
       timeOnSiteSeeding = true;
       timeOnSiteLoad(uid);
+      // (2026-11-25, suggestion #48) this seed read had no error
+      // callback: if it failed or hung (kindle wifi), timeOnSiteSeeding
+      // stayed true forever and no minutes were ever counted or saved
+      // again for the whole session. Now a failed read, or 10s with no
+      // answer, seeds from the local total instead; a late answer still
+      // merges in if the server total is higher.
+      var _seedDone = false;
+      var _seedWatch = setTimeout(function () {
+        if (_seedDone) { return; }
+        _seedDone = true;
+        timeOnSiteSeedUid = uid;
+        timeOnSiteSeeding = false;
+      }, 10000);
       try {
         db.ref("users/" + uid + "/minutesOnSite").once("value", function (snap) {
           var server = snap.val() || 0;
           if (server > timeOnSiteTotal) { timeOnSiteTotal = server; timeOnSiteSave(uid); }
+          if (_seedDone) { return; }
+          _seedDone = true;
+          clearTimeout(_seedWatch);
+          timeOnSiteSeedUid = uid;
+          timeOnSiteSeeding = false;
+        }, function () {
+          if (_seedDone) { return; }
+          _seedDone = true;
+          clearTimeout(_seedWatch);
           timeOnSiteSeedUid = uid;
           timeOnSiteSeeding = false;
         });
-      } catch (e) { timeOnSiteSeedUid = uid; timeOnSiteSeeding = false; }
+      } catch (e) {
+        if (!_seedDone) { _seedDone = true; clearTimeout(_seedWatch); }
+        timeOnSiteSeedUid = uid;
+        timeOnSiteSeeding = false;
+      }
       return;
     }
     var now = Date.now();
@@ -8162,6 +8204,7 @@ function lhWbInit() {
 
   function openChat(refPath, title, returnTo) {
     if (messagesRef) { messagesRef.off(); }
+    if (messagesQuery) { messagesQuery.off(); messagesQuery = null; }
     if (pinsRef) { pinsRef.off(); pinsRef = null; }
     msgEls = {};
     currentRoomAuthors = {};
@@ -8209,7 +8252,8 @@ function lhWbInit() {
     var attachChatListeners = function () {
       box.innerHTML = "";
       messagesRef = db.ref(refPath);
-      messagesRef.limitToLast(50).on("child_added", function (s2) {
+      messagesQuery = messagesRef.limitToLast(50);
+      messagesQuery.on("child_added", function (s2) {
         var mv = s2.val() || {};
         renderMessage(s2.key, mv);
         if (isDmChat && mv.uid && mv.uid !== myUid() && mv.ts && mv.ts > dmOpenedAt) {
@@ -8248,6 +8292,7 @@ function lhWbInit() {
   document.getElementById("dm-menu-btn").onclick = function () { toggleDmMenu(); };
   document.getElementById("back-btn").onclick = function () {
     if (messagesRef) { messagesRef.off(); messagesRef = null; }
+    if (messagesQuery) { messagesQuery.off(); messagesQuery = null; }
     var mb = document.getElementById("messages"); if (mb) { mb.innerHTML = ""; }
     if (pinsRef) { pinsRef.off(); pinsRef = null; }
     if (typingRef) { typingRef.off(); typingRef = null; }
@@ -8513,7 +8558,12 @@ function lhWbInit() {
       editBtn.onclick = function () {
         editingId = pushId;
         clearReply();
-        document.getElementById("msg-input").value = m.text || "";
+        // (2026-11-25, suggestion #71) the old code filled the box with
+        // the render-time text (the closure's m), not the current text:
+        // child_changed updates msgEls but not the closure, so editing an
+        // already-edited message re-sent the older text over the newer
+        // one. Read the current stored text instead.
+        document.getElementById("msg-input").value = (msgEls[pushId] && msgEls[pushId].msg && msgEls[pushId].msg.text) || m.text || "";
         document.getElementById("send-btn").textContent = "save";
         document.getElementById("msg-input").focus();
       };
@@ -8529,6 +8579,10 @@ function lhWbInit() {
     };
 
     box.appendChild(wrap);
+    // (2026-11-25, suggestion #65) the "jump to latest" button already
+    // exists — make sure it is also showing whenever new messages arrive
+    // while you are scrolled up.
+    if (!chatNearBottom) { var _lb = document.getElementById("latest-btn"); if (_lb) { _lb.className = "mini secondary"; } }
     if (pendingJumpMsgId && pushId === pendingJumpMsgId) {
       pendingJumpMsgId = null;
       wrap.style.background = "#ffffcc";
@@ -8678,10 +8732,21 @@ function lhWbInit() {
     return true;
   }
 
+  // double-tap guard (2026-11-25, suggestion #53): on a slow kindle
+  // the send button (or enter) could be hit twice before the first push
+  // finished, and both pushes went through as two messages.
+  var sendingMsg = false;
+  function sendMsgDone() {
+    sendingMsg = false;
+    try { document.getElementById("send-btn").disabled = false; } catch (e) {}
+  }
   function sendMessage() {
     var input = document.getElementById("msg-input");
     var text = input.value.replace(/^\s+|\s+$/g, "");
     if (!text || !auth.currentUser || !messagesRef) { return; }
+    if (sendingMsg) { return; }
+    sendingMsg = true;
+    try { document.getElementById("send-btn").disabled = true; } catch (e) {}
     var me = myUid();
     db.ref("bans/" + me).once("value", function (snap) {
       var b = snap.val();
@@ -8689,23 +8754,25 @@ function lhWbInit() {
         if (b.until && b.until <= Date.now()) { db.ref("bans/" + me).remove(); }
         else {
           flashNotice(b.until ? ("you are banned for " + Math.ceil((b.until - Date.now()) / 60000) + " more min.") : "you have been banned from chatting.");
+          sendMsgDone();
           return;
         }
       }
-      if (!isMod && filterHit(text)) { flashNotice("keep it clean!"); return; }
-      if (!spamCheck()) { return; }
+      if (!isMod && filterHit(text)) { flashNotice("keep it clean!"); sendMsgDone(); return; }
+      if (!spamCheck()) { sendMsgDone(); return; }
       if (editingId) {
         var eid = editingId;
         editingId = null;
         document.getElementById("send-btn").textContent = "Send";
         messagesRef.child(eid).once("value", function (esnap) {
           var em = esnap.val();
-          if (!em) { flashNotice("that message was deleted."); input.value = ""; clearReply(); return; }
-          if (em.uid && em.uid !== me) { flashNotice("you can only edit your own messages."); input.value = ""; clearReply(); return; }
+          if (!em) { flashNotice("that message was deleted."); input.value = ""; clearReply(); sendMsgDone(); return; }
+          if (em.uid && em.uid !== me) { flashNotice("you can only edit your own messages."); input.value = ""; clearReply(); sendMsgDone(); return; }
           messagesRef.child(eid).update({ text: isMod ? text : censor(text), edited: true });
           input.value = "";
           clearReply();
-        }, function () { flashNotice("couldn't save that edit — try again."); });
+          sendMsgDone();
+        }, function () { flashNotice("couldn't save that edit — try again."); sendMsgDone(); });
         return;
       }
       var msg = { name: displayName(), text: isMod ? text : censor(text), ts: Date.now(), uid: me };
@@ -8713,6 +8780,7 @@ function lhWbInit() {
         msg.replyTo = { name: replyTarget.name, text: String(replyTarget.text).substring(0, 120) };
       }
       var sentRef = messagesRef.push(msg, function (err) {
+        sendMsgDone();
         if (err) { flashNotice("Send failed: " + (err.code || err.message || err)); return; }
         grantXp(1, "msg", 60000);
         streakOnChat();
@@ -8748,7 +8816,7 @@ function lhWbInit() {
         input.value = "";
         clearReply();
       });
-    });
+    }, function () { sendMsgDone(); flashNotice("couldn't send — try again."); });
   }
   document.getElementById("send-btn").onclick = sendMessage;
   document.getElementById("msg-input").onkeydown = function (e) {
@@ -8780,27 +8848,53 @@ function lhWbInit() {
     if (hoodFeedRef) { hoodFeedRef.off(); }
     for (var k in hoodCommentsRefs) { hoodCommentsRefs[k].off(); }
     hoodCommentsRefs = {};
-    var first = true;
+    // (2026-11-25, suggestion #58) posts are cached and re-rendered in
+    // sort order; the first load waits for the initial batch before
+    // rendering so the list is never half-sorted.
+    try { var _hs = localStorage.getItem("readium_hood_sort"); if (_hs === "old" || _hs === "new") { hoodSort = _hs; } } catch (e) {}
+    var _hsel = document.getElementById("hood-sort");
+    if (_hsel) { _hsel.value = hoodSort; }
+    hoodPostsCache = {};
+    hoodInitialDone = false;
     hoodFeedRef = db.ref("hoodPosts").orderByChild("ts").limitToLast(20);
     hoodFeedRef.on("child_added", function (snap) {
-      if (first) { first = false; feed.innerHTML = ""; }
-      renderHoodPost(snap.key, snap.val() || {}, feed);
+      hoodPostsCache[snap.key] = snap.val() || {};
+      if (!hoodInitialDone) { return; }
+      if (document.getElementById("hood-" + snap.key)) { return; }
+      renderHoodPost(snap.key, snap.val() || {}, feed, hoodSort === "old");
     });
     hoodFeedRef.once("value", function (esnap) {
-      if (!esnap.exists() || !esnap.numChildren()) { first = false; feed.innerHTML = "<p>no posts yet</p>"; }
-    });
+      hoodInitialDone = true;
+      if (!esnap.exists() || !esnap.numChildren()) { feed.innerHTML = "<p>no posts yet</p>"; return; }
+      hoodRenderFeed();
+    }, function () { hoodInitialDone = true; feed.innerHTML = "<p>could not load posts.</p>"; });
     hoodFeedRef.on("child_removed", function (snap) {
+      delete hoodPostsCache[snap.key];
       var el = document.getElementById("hood-" + snap.key);
       if (el && el.parentNode) { el.parentNode.removeChild(el); }
     });
     hoodFeedRef.on("child_changed", function (snap) {
+      hoodPostsCache[snap.key] = snap.val() || {};
       var p = snap.val() || {};
       var n = (p.comments) ? Object.keys(p.comments).length : 0;
       var btn = document.getElementById("hood-cc-" + snap.key);
       if (btn) { btn.textContent = "comments (" + n + ")"; }
     });
   }
-  function renderHoodPost(postId, p, feed) {
+  // re-render the whole neighborhood feed from the cache, in the
+  // chosen sort order (2026-11-25, suggestion #58).
+  function hoodRenderFeed() {
+    var feed = document.getElementById("hood-feed");
+    if (!feed) { return; }
+    feed.innerHTML = "";
+    var keys = Object.keys(hoodPostsCache);
+    keys.sort(function (a, b) { return ((hoodPostsCache[a] || {}).ts || 0) - ((hoodPostsCache[b] || {}).ts || 0); });
+    if (!keys.length) { feed.innerHTML = "<p>no posts yet</p>"; return; }
+    for (var i = 0; i < keys.length; i++) { renderHoodPost(keys[i], hoodPostsCache[keys[i]], feed, hoodSort === "old"); }
+    var sel = document.getElementById("hood-sort");
+    if (sel) { sel.value = hoodSort; }
+  }
+  function renderHoodPost(postId, p, feed, atEnd) {
     if (p && p.uid && myBlocks[p.uid]) { return; }
     var wrap = document.createElement("div");
     wrap.className = "req-row";
@@ -8875,7 +8969,7 @@ function lhWbInit() {
     row.appendChild(rep);
     wrap.appendChild(row);
     wrap.appendChild(cdiv);
-    feed.insertBefore(wrap, feed.firstChild);
+    if (atEnd) { feed.appendChild(wrap); } else { feed.insertBefore(wrap, feed.firstChild); }
   }
   function loadHoodComments(postId) {
     var box = document.getElementById("hood-c-" + postId);
@@ -9048,6 +9142,11 @@ function lhWbInit() {
     });
   }
   document.getElementById("hood-post-btn").onclick = hoodPost;
+  document.getElementById("hood-sort").onchange = function () {
+    hoodSort = this.value;
+    try { localStorage.setItem("readium_hood_sort", hoodSort); } catch (e) {}
+    hoodRenderFeed();
+  };
   document.getElementById("hood-input").onkeydown = function (e) {
     if (e.keyCode === 13 && !e.shiftKey) {
       if (getSendOnEnter()) { e.preventDefault(); hoodPost(); }
@@ -9533,6 +9632,8 @@ function lhWbInit() {
   /* ---------- cookie clicker ---------- */
   var cookieClicks = 0;
   var cookieCookies = 0;
+  var cookieBest = 0; // most cookies ever held (2026-11-25, suggestion #74): this is what the leaderboard ranks, so spending cookies or opening the game on a fresh device can no longer wipe your progress
+  var cookieBestLoaded = false; // server best known yet — the sync waits for it
   var cookieUps = { f1: 0, f2: 0, f3: 0, f4: 0, f5: 0, f6: 0, baker: 0, bakery: 0, factory: 0, mine: 0, portal: 0, m1: 0, m2: 0, lucky: 0 };
   var cookieLastSync = 0;
   var cookieTickTimer = null;
@@ -9572,6 +9673,7 @@ function lhWbInit() {
   function cookieLoad() {
     try { cookieClicks = parseInt(lsGet("readium_cookie_clicks") || "0", 10) || 0; } catch (e) { cookieClicks = 0; }
     try { cookieCookies = parseInt(lsGet("readium_cookie_cookies") || "0", 10) || 0; } catch (e) { cookieCookies = 0; }
+    try { cookieBest = parseInt(lsGet("readium_cookie_best") || "0", 10) || 0; } catch (e) { cookieBest = 0; }
     try {
       var u = JSON.parse(lsGet("readium_cookie_ups") || "{}");
       for (var k in cookieUps) { if (typeof u[k] === "number") { cookieUps[k] = u[k]; } }
@@ -9581,6 +9683,7 @@ function lhWbInit() {
     try {
       lsSet("readium_cookie_clicks", String(cookieClicks));
       lsSet("readium_cookie_cookies", String(cookieCookies));
+      lsSet("readium_cookie_best", String(cookieBest));
       lsSet("readium_cookie_ups", JSON.stringify(cookieUps));
     } catch (e) {}
   }
@@ -9625,15 +9728,17 @@ function lhWbInit() {
   function cookieSync(force) {
     var uid = myUid();
     if (!uid) { return; }
+    if (!cookieBestLoaded) { return; } // don't sync until the server best is known — a fresh 0 must never overwrite a big saved score
     var now = Date.now();
     if (!force && now - cookieLastSync < 5000) { return; }
     cookieLastSync = now;
-    try { db.ref("cookieScores/" + uid).set({ name: displayName(), clicks: cookieClicks, cookies: cookieCookies, at: now }); } catch (e) {}
+    try { db.ref("cookieScores/" + uid).set({ name: displayName(), clicks: cookieClicks, cookies: cookieCookies, best: cookieBest, at: now }); } catch (e) {}
   }
   function cookieDoClick() {
     var gain = cookiePerClick();
     cookieClicks++;
     cookieCookies += gain;
+    if (cookieCookies > cookieBest) { cookieBest = cookieCookies; }
     cookieSave();
     cookieRender();
     cookieSync(false);
@@ -9682,7 +9787,7 @@ function lhWbInit() {
       var rows = [];
       for (var uid in v) {
         var r = v[uid] || {};
-        var score = (typeof r.cookies === "number") ? r.cookies : (r.clicks || 0);
+        var score = (typeof r.best === "number" && r.best > 0) ? r.best : ((typeof r.cookies === "number") ? r.cookies : (r.clicks || 0));
         if (score > 0) { rows.push({ uid: uid, name: r.name || "someone", score: score }); }
       }
       rows.sort(function (a, b) { return b.score - a.score; });
@@ -9704,12 +9809,36 @@ function lhWbInit() {
     cookieRender();
     showScreen("cookie-screen");
     cookieLoadBoard();
+    // (2026-11-25, suggestion #74) learn the server best before any
+    // sync happens: the old code wrote the local total straight over
+    // the server score, so opening the game on a fresh device (0
+    // cookies) wiped a big saved score. The balance itself is never
+    // raised from the server (spending cookies is a real drop) — only
+    // the best and the click count are merged up.
+    if (!cookieBestLoaded) {
+      var _cu = myUid();
+      if (!_cu) { cookieBestLoaded = true; }
+      else {
+        try {
+          db.ref("cookieScores/" + _cu).once("value", function (snap) {
+            var r = snap.val() || {};
+            var sb = (typeof r.best === "number") ? r.best : ((typeof r.cookies === "number") ? r.cookies : 0);
+            if (sb > cookieBest) { cookieBest = sb; }
+            if ((typeof r.clicks === "number") && r.clicks > cookieClicks) { cookieClicks = r.clicks; }
+            cookieBestLoaded = true;
+            cookieSave();
+            cookieRender();
+          }, function () { cookieBestLoaded = true; });
+        } catch (e) { cookieBestLoaded = true; }
+      }
+    }
     cookieStopTimers();
     // auto-bakers tick while the game is open
     cookieTickTimer = setInterval(function () {
       var gain = cookiePerSec();
       if (gain > 0) {
         cookieCookies += gain;
+        if (cookieCookies > cookieBest) { cookieBest = cookieCookies; }
         cookieSave();
         cookieRender();
         cookieSync(false);
@@ -9721,6 +9850,7 @@ function lhWbInit() {
   document.getElementById("golden-cookie").onclick = function () {
     var bonus = (cookieUps.lucky ? 100 : 50) * cookiePerClick();
     cookieCookies += bonus;
+    if (cookieCookies > cookieBest) { cookieBest = cookieCookies; }
     cookieSave();
     cookieRender();
     flashNotice("golden cookie! +" + bonus + "!");
@@ -13134,7 +13264,8 @@ function flairName(name, rec) {
       parents: [], siblings: [], friends: [], pets: [],
       jail: 0, jailTotal: 0, loans: 0, sick: null,
       gen: (inherit && inherit.gen) ? inherit.gen : 1,
-      log: []
+      log: [],
+      xpGiven: false
     };
     lifeGenParents(life);
     lifeLog("was born to " + life.parents[0].name + " and " + life.parents[1].name + ".");
@@ -13477,6 +13608,17 @@ function flairName(name, rec) {
     life.stats.health = 0;
     var nw = lifeNetWorth();
     var ribbon = lifeRibbon();
+    // (2026-11-25, suggestion #52) playing a whole life paid nothing:
+    // finishing a life now pays XP — 10 for the life, +5 per 20 years
+    // lived (max +15), +10 more if the ribbon is new to your collection.
+    // xpGiven (saved with the life) keeps it to once per life.
+    var _lifeXp = 0;
+    if (!life.xpGiven) {
+      var _ribbonIsNew = lifeRibbonsGet().indexOf(ribbon) === -1;
+      _lifeXp = 10 + Math.min(15, Math.floor(life.age / 20) * 5) + (_ribbonIsNew ? 10 : 0);
+      life.xpGiven = true;
+      grantXp(_lifeXp, "lifesim", 0);
+    }
     lifeRibbonsAdd(ribbon);
     lifeLog("died of " + cause + " at age " + life.age + ".");
     lifeSave();
@@ -13489,7 +13631,7 @@ function flairName(name, rec) {
     document.getElementById("life-dead-summary").textContent =
       "lived to " + life.age + ", died of " + cause + ". net worth " + fmtMoney(nw) +
       ", worked as " + career + ", had " + kids + " kid" + (kids === 1 ? "" : "s") +
-      ", generation " + life.gen + ". ribbon: " + ribbon + ".";
+      ", generation " + life.gen + ". ribbon: " + ribbon + "." + (_lifeXp ? " earned " + _lifeXp + " xp for this life!" : "");
     var dead = document.getElementById("life-dead");
     var old = document.getElementById("life-cont-btn");
     if (old) { dead.removeChild(old); }
@@ -17758,6 +17900,13 @@ function alcRenderRecipes() {
             var copy = {};
             var src = critterSave.box[i];
             for (var k in src) { copy[k] = src[k]; }
+            // (2026-11-25, suggestion #62) the team copy is its own
+            // critter: the old copy shared the box critter's inst, so
+            // "release to wild" on the box copy (which removes team
+            // members by inst) also wiped the team copy and the team
+            // vanished. The catch flow already mints a fresh inst for
+            // its team copy — do the same here.
+            copy.inst = critterNewInst();
             var already = false;
             critterSave.team.forEach(function (t) { if (critterSame(t, src)) { already = true; } });
             if (already) { flashNotice("already on your team!"); critterRender(); return; }
@@ -17855,6 +18004,10 @@ function alcRenderRecipes() {
             // in the box, so the released one just disappeared.
             var copy = {};
             for (var k in cc) { copy[k] = cc[k]; }
+            // same fix as the add-to-team copy (2026-11-25, suggestion
+            // #62): the released critter is its own critter in the box,
+            // so no stale inst can ever match a team member again.
+            copy.inst = critterNewInst();
             critterSave.box.push(copy);
             critterSave.team.splice(i, 1);
             critterStore();
@@ -18876,6 +19029,7 @@ function alcRenderRecipes() {
   var reviewUsers = [];
   var reviewIdx = 0;
   var reviewTab = "queue";
+  var reviewSort = "new"; // (2026-11-25, suggestion #58) queue sort: "new" = newest joined first, "old" = oldest joined first
   var reviewData = { users: {}, reviews: {}, bans: {}, appeals: {} };
   function loadAccountReview() {
     var box = document.getElementById("dash-review-box");
@@ -18898,7 +19052,7 @@ function alcRenderRecipes() {
     }).sort(function (a, b) {
       var ta = (reviewData.users[a] && (reviewData.users[a].joinedAt || reviewData.users[a].at)) || 0;
       var tb = (reviewData.users[b] && (reviewData.users[b].joinedAt || reviewData.users[b].at)) || 0;
-      return tb - ta; // newest accounts first — that's where the alts and spam are
+      return reviewSort === "old" ? ta - tb : tb - ta; // newest accounts first by default — that's where the alts and spam are
     });
     reviewIdx = 0;
   }
@@ -21100,31 +21254,10 @@ function alcRenderRecipes() {
       else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
     } catch (e) {}
   };
-  (function () {
-    var tbtns = document.getElementsByClassName("sug-type");
-    for (var i = 0; i < tbtns.length; i++) {
-      (function (b) {
-        b.onclick = function () {
-          suggestType = b.getAttribute("data-t");
-          for (var j = 0; j < tbtns.length; j++) {
-            tbtns[j].className = "mini secondary sug-type" + (tbtns[j] === b ? " sel" : "");
-          }
-        };
-      })(tbtns[i]);
-    }
-    var tabs = document.getElementsByClassName("sug-tab");
-    for (var k = 0; k < tabs.length; k++) {
-      (function (b) {
-        b.onclick = function () {
-          suggestTab = b.getAttribute("data-tab");
-          for (var j = 0; j < tabs.length; j++) {
-            tabs[j].className = "mini secondary sug-tab" + (tabs[j] === b ? " sel" : "");
-          }
-          renderSuggest();
-        };
-      })(tabs[k]);
-    }
-  })();
+  // (2026-11-25, suggestion #64) the idea/bug picker and the
+  // open/completed/rejected tabs were buttons; now dropdowns to save space.
+  document.getElementById("suggest-type-sel").onchange = function () { suggestType = this.value; };
+  document.getElementById("suggest-tab-sel").onchange = function () { suggestTab = this.value; renderSuggest(); };
 
 /* ---------- auth state ---------- */
   function checkXpGrants() {
@@ -21238,7 +21371,7 @@ function alcRenderRecipes() {
       dmMsgWatch = {};
       dmReqSeen = {};
       mentionSeen = {};
-      missedChecked = false;
+      missedRunning = false;
       myXp = 0;
       isMod = false;
       isHelper = false;
