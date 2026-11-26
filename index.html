@@ -20411,6 +20411,7 @@ function alcRenderRecipes() {
   };
   var myFeastTeam = null;
   var myFeastPumpkins = 0;
+  var feastPumpkinsRef = null;
   var myFeastStations = {};
   var feastTab = "teams";
   var feastTickTimer = null;
@@ -20508,6 +20509,17 @@ function alcRenderRecipes() {
       joinText.textContent = "you need an account to play — sign in from home first!";
       return;
     }
+    /* persistent balance listener: RTDB transactions evaluate the update
+       function against the LOCAL cache first, so without this the buy
+       transaction always sees null (0) and aborts before the server is
+       ever consulted — every buy fails as "not enough pumpkin dollars". */
+    if (feastPumpkinsRef) { feastPumpkinsRef.off("value"); }
+    feastPumpkinsRef = db.ref("feastPumpkins/" + uid);
+    feastPumpkinsRef.on("value", function (s) {
+      myFeastPumpkins = (typeof s.val() === "number") ? s.val() : 0;
+      var pl = document.getElementById("feast-pumpkin-line");
+      if (pl) { pl.textContent = "your pumpkin dollars: " + myFeastPumpkins; }
+    });
     joinBtn.className = "";
     joinText.textContent = "turkeys are cooking, dishes are selling, and your team needs pumpkin dollars! tap below to get sorted onto a team.";
     document.getElementById("feast-result").textContent = "";
@@ -21232,7 +21244,7 @@ function alcRenderRecipes() {
     });
   }
   document.getElementById("feast-grat-post-btn").onclick = feastGratPost;
-  function goFeastHome() { stopFeastCountdown(); if (feastGratFeedRef) { feastGratFeedRef.off(); feastGratFeedRef = null; } goHome(); }
+  function goFeastHome() { stopFeastCountdown(); if (feastGratFeedRef) { feastGratFeedRef.off(); feastGratFeedRef = null; } if (feastPumpkinsRef) { feastPumpkinsRef.off("value"); feastPumpkinsRef = null; } goHome(); }
   document.getElementById("feast-home-btn").onclick = goFeastHome;
   document.getElementById("feast-home-btn-top").onclick = goFeastHome;
   document.getElementById("feast-tab-cook").onclick = function () { setFeastTab("cook"); };
