@@ -2475,7 +2475,7 @@
   }
   function watchOnline() {
     if (onlineListRef) { onlineListRef.off(); }
-    onlineListRef = db.ref("presence");
+    onlineListRef = db.ref("presence").orderByChild("at").startAt(Date.now() - 5 * 60 * 1000);
     onlineListRef.on("value", function (snap) { renderOnline(snap.val()); });
   }
   function renderOnline(data) {
@@ -2883,6 +2883,27 @@
   var FOUNDER_UID = "393cJa8SHXbuHTX4CTBf2yS4ePi1";
   var FOUNDER_UID2 = "m9vGjZaNSVe1ofNotoUhuEx32BY2"; // chicknofficial - second founder (added 2026-10-27)
   function isFounderUid(uid) { return !!uid && (uid === FOUNDER_UID || uid === FOUNDER_UID2); }
+  // Fetch only the user records a screen will actually display. Reading the
+  // entire users collection also downloads profile pictures and pet data for
+  // every account, even when a leaderboard only shows its top 20 entries.
+  function fetchUserRecords(uids, callback) {
+    var result = {};
+    var unique = [];
+    var seen = {};
+    (uids || []).forEach(function (uid) {
+      if (uid && !seen[uid]) { seen[uid] = true; unique.push(uid); }
+    });
+    if (!unique.length) { callback(result); return; }
+    var remaining = unique.length;
+    unique.forEach(function (uid) {
+      db.ref("users/" + uid).once("value", function (snap) {
+        if (snap.exists()) { result[uid] = snap.val(); }
+        if (--remaining === 0) { callback(result); }
+      }, function () {
+        if (--remaining === 0) { callback(result); }
+      });
+    });
+  }
   function checkMod() {
     var u = auth.currentUser;
     isFounder = !!u && isFounderUid(u.uid);
@@ -4506,7 +4527,7 @@
         each("users", total + " (" + banned + " banned)");
       }, function () { each("users", total); });
     }, function () { each("users", "unavailable"); });
-    db.ref("presence").once("value", function (s) {
+    db.ref("presence").orderByChild("at").startAt(Date.now() - 5 * 60 * 1000).once("value", function (s) {
       var v = s.val() || {}, online = 0, now = Date.now();
       for (var k in v) {
         // only count if active in last 5 minutes (filter stale)
@@ -12308,8 +12329,7 @@ function loadBoard(listEl, tabsBox) {
     }
     rows = rows.slice(0, 20);
     if (boardMyRow && boardMyRank >= 20) { rows.push(boardMyRow); }
-    db.ref("users").once("value", function (usnap) {
-      var users = usnap.val() || {};
+    fetchUserRecords(rows.map(function (r) { return r.uid; }), function (users) {
       list.innerHTML = "";
       if (!rows.length) { list.innerHTML = "<p>nobody yet — be the first!</p>"; return; }
       var me = myUid();
@@ -14849,7 +14869,7 @@ function flairName(name, rec) {
       var m = trail.party[i];
       members.push(escapeHtml(m.name) + (m.alive ? " (" + trailHealthWord(m.health) + ")" : " (dead)"));
     }
-    el.innerHTML = "<b>" + line + "</b><br>" + members.join(", ");
+    el.innerHTML = "<b>" + escapeHtml(line) + "</b><br>" + members.join(", ");
   }
   function trailRenderLog() {
     var el = document.getElementById("trail-log");
@@ -15567,7 +15587,7 @@ function flairName(name, rec) {
     var t = outbreakTotals();
     var pct = t.pop > 0 ? (t.inf / t.pop * 100) : 0;
     var stats = document.getElementById("outbreak-stats");
-    stats.innerHTML = "<p><b>" + escapeHtml(outbreak.name) + "</b> (" + outbreak.type + ", " + outbreak.diff + ") — day " + outbreak.day + "</p>" +
+    stats.innerHTML = "<p><b>" + escapeHtml(outbreak.name) + "</b> (" + escapeHtml(outbreak.type) + ", " + escapeHtml(outbreak.diff) + ") — day " + escapeHtml(outbreak.day) + "</p>" +
       "<p>infected: <b>" + outbreakFmt(t.inf) + "</b> (" + Math.floor(pct) + "% of the world) &nbsp; dead: <b>" + outbreakFmt(outbreak.dead) + "</b><br>" +
       "DNA: <b>" + outbreak.dna + "</b> &nbsp; cure: <b>" + Math.floor(outbreak.cure) + "%</b>" + (outbreak.borderDays > 0 ? " &nbsp; borders closed (" + outbreak.borderDays + " days left)" : "") + "</p>";
     var rg = document.getElementById("outbreak-regions");
@@ -15575,7 +15595,7 @@ function flairName(name, rec) {
     for (var i = 0; i < outbreak.regions.length; i++) {
       var r = outbreak.regions[i];
       var p = r.pop > 0 ? (r.inf / r.pop * 100) : 0;
-      html += "<p><b>" + r.name + "</b> — pop " + outbreakFmt(r.pop) + ", infected " + outbreakFmt(r.inf) + "<br>" + outbreakBar(p) + "</p>";
+      html += "<p><b>" + escapeHtml(r.name) + "</b> — pop " + outbreakFmt(r.pop) + ", infected " + outbreakFmt(r.inf) + "<br>" + outbreakBar(p) + "</p>";
     }
     rg.innerHTML = html;
     var up = document.getElementById("outbreak-upgrades");
@@ -15859,8 +15879,7 @@ function flairName(name, rec) {
     if (!box) { return; }
     db.ref("eventTeams").once("value", function (snap) {
       var teams = snap.val() || {};
-      db.ref("users").once("value", function (usnap) {
-        var users = usnap.val() || {};
+      fetchUserRecords(Object.keys(teams), function (users) {
         var byTeam = { pumpkin: [], blackcat: [], ghost: [], bat: [] };
         for (var uid in teams) {
           var t = teams[uid];
@@ -18940,7 +18959,7 @@ function alcRenderRecipes() {
       mhReviewIdx = 0;
       renderMhReviewCard();
     }, function (err) {
-      box.innerHTML = "<p>couldn't load applications: " + (err.code || err.message || err) + "</p>";
+      box.innerHTML = "<p>couldn't load applications: " + escapeHtml(err.code || err.message || err) + "</p>";
     });
   }
   function renderMhReviewCard() {
@@ -19594,7 +19613,7 @@ function alcRenderRecipes() {
     // who's online
     if (t.indexOf("who's online") !== -1 || t.indexOf("whos online") !== -1) {
       try {
-        db.ref("presence").once("value", function (snap) {
+        db.ref("presence").orderByChild("at").startAt(Date.now() - 5 * 60 * 1000).once("value", function (snap) {
           var p = snap.val() || {};
           var names = [];
           var now = Date.now();
@@ -20354,8 +20373,7 @@ function alcRenderRecipes() {
         }
         rows.sort(function (a, b) { return b.candy - a.candy; });
         rows = rows.slice(0, 20);
-        db.ref("users").once("value", function (usnap) {
-          var users = usnap.val() || {};
+        fetchUserRecords(rows.map(function (r) { return r.uid; }), function (users) {
           list.innerHTML = "";
           if (!rows.length) { list.innerHTML = "<p>nobody has candy yet — knock on some doors!</p>"; return; }
           var me = myUid();
@@ -21039,8 +21057,7 @@ function alcRenderRecipes() {
         }
         rows.sort(function (a, b) { return b.pumpkins - a.pumpkins; });
         rows = rows.slice(0, 20);
-        db.ref("users").once("value", function (usnap) {
-          var users = usnap.val() || {};
+        fetchUserRecords(rows.map(function (r) { return r.uid; }), function (users) {
           list.innerHTML = "";
           if (!rows.length) { list.innerHTML = "<p>nobody has pumpkin dollars yet — buy a station and tap your turkey!</p>"; return; }
           var me = myUid();
