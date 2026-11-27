@@ -338,6 +338,13 @@
     text-align: center;
   }
   #signin-card { text-align: left; }
+  /* profile popup trap fix (2026-11-27): long profiles used to overflow the
+     viewport with no scroll and push the close button off-screen, so the
+     user was stuck. The card now scrolls internally and the close button
+     sticks to its bottom edge. */
+  #profile-card { max-height: 90vh; overflow-y: auto; box-sizing: border-box; margin: 0 auto; }
+  #pp-close-btn { position: sticky; bottom: 0; }
+
   #signin-card h2 { text-align: center; }
   #profile-card .pfp { margin: 0 auto 10px auto; }
   #profile-card p { margin: 0 0 8px 0; }
@@ -1202,6 +1209,19 @@
     <input id="new-pw-input" type="password" maxlength="64" autocomplete="new-password">
     <button id="change-pw-btn" class="secondary">change password</button>
     <div id="pw-msg"></div>
+  </div>
+  <button id="set-sec-links" class="secondary section-head">linked accounts +</button>
+  <div id="set-body-links" class="hidden section-body">
+    <p style="font-size:16px">Link your accounts together. Your main account and your alt accounts show up on each other's profiles. You need the other account's username and password to link it.</p>
+    <div id="link-list"></div>
+    <label for="link-user-input">Other account's username</label>
+    <input id="link-user-input" type="text" maxlength="20" autocomplete="off">
+    <label for="link-pw-input">Other account's password</label>
+    <input id="link-pw-input" type="password" maxlength="64" autocomplete="new-password">
+    <p style="font-size:16px">The other account is my:</p>
+    <button id="link-as-alt-btn" class="secondary">alt account</button>
+    <button id="link-as-main-btn" class="secondary">main account</button>
+    <p id="link-msg" style="font-size:16px"></p>
   </div>
   <button id="set-sec-text" class="secondary section-head">text size +</button>
   <div id="set-body-text" class="hidden section-body">
@@ -2074,6 +2094,11 @@
     <div id="pp-pfp"></div>
     <h2 id="pp-name"></h2>
     <p id="pp-bio"></p>
+    <div id="pp-links" class="hidden">
+      <p style="font-size:16px"><b>linked accounts</b></p>
+      <div id="pp-links-list"></div>
+    </div>
+
     <div id="pp-pet" class="hidden">
       <img id="pp-pet-img" alt="pet" style="width:64px;height:64px;image-rendering:pixelated;">
       <p id="pp-pet-name" style="font-size:16px;"></p>
@@ -2213,6 +2238,7 @@
   var typingLast = 0;
   var chatReturn = "msgs";
   var usersByName = {};
+  var usersByNameLoaded = false;
   var ppUid = null;
   var firstAuth = true;
   var msgTimes = [];
@@ -3057,6 +3083,7 @@
     gameMode = null;
     msgEls = {};
     usersByName = {};
+    usersByNameLoaded = false;
     msgTimes = [];
     mutedUntil = 0;
     if (muteTimer) { clearInterval(muteTimer); muteTimer = null; }
@@ -3178,6 +3205,7 @@
   }
   document.getElementById("set-sec-clock").onclick = function () { setSectionToggle("clock", "clock"); };
   document.getElementById("set-sec-pw").onclick = function () { setSectionToggle("pw", "password"); };
+  document.getElementById("set-sec-links").onclick = function () { setSectionToggle("links", "linked accounts"); renderLinkList(); };
   document.getElementById("set-sec-text").onclick = function () { setSectionToggle("text", "text size"); };
   document.getElementById("set-sec-appear").onclick = function () { setSectionToggle("appear", "appearance"); };
   document.getElementById("set-sec-online").onclick = function () { setSectionToggle("online", "online list"); };
@@ -3209,6 +3237,105 @@
       });
     });
   };
+  /* ---------- linked accounts (main + alts, profile tags only) ---------- */
+  // The other account's password is checked on a SECONDARY Firebase app
+  // instance ("linkVerify") so signing in as the other account never
+  // disturbs the main session. The password is used once for the check
+  // and cleared from the input right after — it is never written to
+  // Firebase, localStorage, or any log.
+  var linkVerifyApp = null;
+  function getLinkVerifyAuth() {
+    if (!linkVerifyApp) {
+      try { linkVerifyApp = firebase.initializeApp(firebaseConfig, "linkVerify"); }
+      catch (e) { linkVerifyApp = firebase.app("linkVerify"); }
+    }
+    return linkVerifyApp.auth();
+  }
+  function linkTagLabel(role) { return role === "main" ? "Main account" : "Alt account"; }
+  function renderLinkList() {
+    var me = myUid();
+    var list = document.getElementById("link-list");
+    if (!list) { return; }
+    if (!me) { list.innerHTML = ""; return; }
+    db.ref("linkedAccounts/" + me).once("value", function (snap) {
+      var v = snap.val() || {};
+      var keys = Object.keys(v);
+      if (!keys.length) { list.innerHTML = "<p style=\"font-size:16px\">no accounts linked yet.</p>"; return; }
+      list.innerHTML = "";
+      keys.forEach(function (otherUid) {
+        var rec = v[otherUid] || {};
+        var row = document.createElement("p");
+        row.style.fontSize = "16px";
+        var nm = document.createElement("b");
+        nm.textContent = rec.username || "user";
+        row.appendChild(nm);
+        row.appendChild(document.createTextNode(" \u2014 " + linkTagLabel(rec.role)));
+        var un = document.createElement("button");
+        un.className = "secondary";
+        un.textContent = "unlink";
+        un.style.marginLeft = "8px";
+        un.onclick = function () { unlinkAccount(otherUid); };
+        row.appendChild(un);
+        list.appendChild(row);
+      });
+    });
+  }
+  function unlinkAccount(otherUid) {
+    var me = myUid();
+    if (!me || !otherUid) { return; }
+    var msg = document.getElementById("link-msg");
+    db.ref("linkedAccounts/" + me + "/" + otherUid).remove();
+    db.ref("linkedAccounts/" + otherUid + "/" + me).remove(function () {
+      if (msg) { msg.textContent = "unlinked."; }
+      renderLinkList();
+    });
+  }
+  function linkAccount(otherIsAlt) {
+    var me = myUid();
+    var msg = document.getElementById("link-msg");
+    if (!me) { return; }
+    var otherName = document.getElementById("link-user-input").value.replace(/^\s+|\s+$/g, "").toLowerCase();
+    var otherPw = document.getElementById("link-pw-input").value;
+    if (!otherName) { msg.textContent = "type the other account's username."; return; }
+    if (!otherPw) { msg.textContent = "type the other account's password."; return; }
+    msg.textContent = "checking...";
+    db.ref("users").orderByChild("name").equalTo(otherName).once("value", function (snap) {
+      if (!snap.exists()) { msg.textContent = "no account with that username."; return; }
+      var otherUid = Object.keys(snap.val())[0];
+      if (otherUid === me) { msg.textContent = "that's your own account \u2014 you can't link to yourself."; return; }
+      db.ref("linkedAccounts/" + me + "/" + otherUid).once("value", function (lsnap) {
+        if (lsnap.exists()) {
+          document.getElementById("link-pw-input").value = "";
+          msg.textContent = "already linked to " + otherName + ".";
+          return;
+        }
+        var vAuth = getLinkVerifyAuth();
+        vAuth.signInWithEmailAndPassword(loginEmail(otherName), otherPw).then(function () {
+          return vAuth.signOut();
+        }).then(function () {
+          // password checked out — write both directions with the main session
+          var otherRole = otherIsAlt ? "alt" : "main";
+          var myRole = otherIsAlt ? "main" : "alt";
+          db.ref("users/" + me + "/name").once("value", function (nsnap) {
+            var myName = nsnap.val() || displayName();
+            var ts = firebase.database.ServerValue.TIMESTAMP;
+            db.ref("linkedAccounts/" + me + "/" + otherUid).set({ username: otherName, role: otherRole, linkedAt: ts });
+            db.ref("linkedAccounts/" + otherUid + "/" + me).set({ username: myName, role: myRole, linkedAt: ts }, function () {
+              document.getElementById("link-pw-input").value = "";
+              msg.textContent = "linked to " + otherName + ".";
+              renderLinkList();
+            });
+          });
+        }).catch(function (err) {
+          document.getElementById("link-pw-input").value = "";
+          msg.textContent = "wrong username or password.";
+        });
+      });
+    });
+  }
+  document.getElementById("link-as-alt-btn").onclick = function () { linkAccount(true); };
+  document.getElementById("link-as-main-btn").onclick = function () { linkAccount(false); };
+
   function updateFullscreenBtn() {
     var b = document.getElementById("set-fullscreen-btn");
     if (b) { b.textContent = document.fullscreenElement ? "exit fullscreen" : "go fullscreen"; }
@@ -7961,6 +8088,43 @@ function lhWbInit() {
         if (pplo) { pplo.textContent = fmtLastOnline(lsnap.val()); }
       });
     });
+    // linked accounts: profile only — list the other accounts with their tag
+    var ppLinks = document.getElementById("pp-links");
+    var ppLinksList = document.getElementById("pp-links-list");
+    if (ppLinks && ppLinksList) {
+      ppLinks.className = "hidden";
+      ppLinksList.innerHTML = "";
+      var linkUid = uid;
+      db.ref("linkedAccounts/" + uid).once("value", function (lsnap) {
+        if (ppUid !== linkUid) { return; }
+        var v = lsnap.val() || {};
+        var keys = Object.keys(v);
+        if (!keys.length) { return; }
+        ppLinks.className = "";
+        keys.forEach(function (otherUid) {
+          var rec = v[otherUid] || {};
+          var row = document.createElement("p");
+          row.style.fontSize = "16px";
+          var nm = document.createElement("b");
+          nm.textContent = rec.username || "user";
+          row.appendChild(nm);
+          row.appendChild(document.createTextNode(" \u2014 " + linkTagLabel(rec.role)));
+          if (linkUid === myUid()) {
+            var un = document.createElement("button");
+            un.className = "secondary";
+            un.textContent = "unlink";
+            un.style.marginLeft = "8px";
+            un.onclick = function () {
+              unlinkAccount(otherUid);
+              document.getElementById("profile-popup").className = "hidden";
+              ppUid = null;
+            };
+            row.appendChild(un);
+          }
+          ppLinksList.appendChild(row);
+        });
+      });
+    }
     renderPopupBadges(uid);
     streakShowOnProfile(uid);
     document.getElementById("profile-popup").className = "";
@@ -7969,6 +8133,24 @@ function lhWbInit() {
     document.getElementById("profile-popup").className = "hidden";
     ppUid = null;
   };
+  // profile popup trap fix (2026-11-27): tap the dark backdrop outside the
+  // card to close, or press Escape — so a long profile can never trap you.
+  document.getElementById("profile-popup").onclick = function (e) {
+    if (e.target === this) {
+      document.getElementById("profile-popup").className = "hidden";
+      ppUid = null;
+    }
+  };
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      var pp = document.getElementById("profile-popup");
+      if (pp && pp.className.indexOf("hidden") === -1) {
+        pp.className = "hidden";
+        ppUid = null;
+      }
+    }
+  });
+
   document.getElementById("pp-pet-btn").onclick = function () {
     document.getElementById("profile-popup").className = "hidden";
     ppUid = null;
@@ -8281,12 +8463,12 @@ function lhWbInit() {
           markDmRead(refPath.split("/")[1]);
         }
       });
-      messagesRef.on("child_removed", function (s2) {
+      messagesQuery.on("child_removed", function (s2) {
         var rec = msgEls[s2.key];
         if (rec && rec.wrap && rec.wrap.parentNode) { rec.wrap.parentNode.removeChild(rec.wrap); }
         delete msgEls[s2.key];
       });
-      messagesRef.on("child_changed", function (s2) {
+      messagesQuery.on("child_changed", function (s2) {
         var mv2 = s2.val() || {};
         updateReactions(s2.key, mv2.reactions);
         var rec2 = msgEls[s2.key];
@@ -8299,15 +8481,21 @@ function lhWbInit() {
         }
       });
     };
-    db.ref("users").once("value", function (snap) {
-      usersByName = {};
-      var v = snap.val() || {};
-      var uids = Object.keys(v);
-      for (var i = 0; i < uids.length; i++) {
-        if (v[uids[i]].name) { usersByName[String(v[uids[i]].name).toLowerCase()] = { uid: uids[i], rec: v[uids[i]] }; }
-      }
-      attachChatListeners();
-    }, function () { attachChatListeners(); });
+    // users map is cached once per session (2026-11-27 usage fix: fetching
+    // all ~900 users on every room/DM open was a top download driver)
+    if (usersByNameLoaded) { attachChatListeners(); }
+    else {
+      db.ref("users").once("value", function (snap) {
+        usersByName = {};
+        var v = snap.val() || {};
+        var uids = Object.keys(v);
+        for (var i = 0; i < uids.length; i++) {
+          if (v[uids[i]].name) { usersByName[String(v[uids[i]].name).toLowerCase()] = { uid: uids[i], rec: v[uids[i]] }; }
+        }
+        usersByNameLoaded = true;
+        attachChatListeners();
+      }, function () { attachChatListeners(); });
+    }
   }
   document.getElementById("sidebar-toggle-btn").onclick = function () { toggleChatSidebar(); };
   document.getElementById("dm-menu-btn").onclick = function () { toggleDmMenu(); };
@@ -8319,7 +8507,6 @@ function lhWbInit() {
     if (typingRef) { typingRef.off(); typingRef = null; }
     clearTyping();
     msgEls = {};
-    usersByName = {};
     clearReply();
     if (chatReturn === "dm") { enterDmScreen(); }
     else { enterMsgs(); }
@@ -12309,10 +12496,13 @@ function loadBoard(listEl, tabsBox) {
   var now = new Date();
   var isAll = boardTab === "all";
   var ref;
-  if (isAll) { ref = db.ref("xp"); }
-  else if (boardTab === "day") { ref = db.ref("xpDaily/" + xpDayKey(now)); }
-  else if (boardTab === "week") { ref = db.ref("xpWeekly/" + xpWeekKey(now)); }
-  else { ref = db.ref("xpMonthly/" + xpMonthKey(now)); }
+  // server-side top 20 (2026-11-27 usage fix: the whole xp bucket was
+  // downloaded to show 20 rows); xp/<uid> is {xp: N}, daily/weekly/monthly
+  // buckets are plain numbers
+  if (isAll) { ref = db.ref("xp").orderByChild("xp").limitToLast(20); }
+  else if (boardTab === "day") { ref = db.ref("xpDaily/" + xpDayKey(now)).orderByValue().limitToLast(20); }
+  else if (boardTab === "week") { ref = db.ref("xpWeekly/" + xpWeekKey(now)).orderByValue().limitToLast(20); }
+  else { ref = db.ref("xpMonthly/" + xpMonthKey(now)).orderByValue().limitToLast(20); }
   ref.once("value", function (snap) {
     var v = snap.val() || {};
     var rows = [];
@@ -12327,9 +12517,12 @@ function loadBoard(listEl, tabsBox) {
     for (var mi = 0; mi < rows.length; mi++) {
       if (rows[mi].uid === boardMe) { boardMyRow = rows[mi]; boardMyRank = mi; break; }
     }
-    rows = rows.slice(0, 20);
-    if (boardMyRow && boardMyRank >= 20) { rows.push(boardMyRow); }
-    fetchUserRecords(rows.map(function (r) { return r.uid; }), function (users) {
+    var finishBoard = function () {
+      rows = rows.slice(0, 20);
+      // own row: already in the top 20 (highlighted in place), or fetched
+      // separately below when outside the top 20 (rank unknown, shown as –)
+      if (boardMyRow && boardMyRank === -1) { rows.push(boardMyRow); }
+      fetchUserRecords(rows.map(function (r) { return r.uid; }), function (users) {
       list.innerHTML = "";
       if (!rows.length) { list.innerHTML = "<p>nobody yet — be the first!</p>"; return; }
       var me = myUid();
@@ -12338,7 +12531,7 @@ function loadBoard(listEl, tabsBox) {
           var row = document.createElement("div");
           row.className = "board-row" + (r.uid === me ? " me" : "");
           var rk = document.createElement("span");
-          rk.className = "board-rank"; rk.textContent = (rank + 1) + ".";
+          rk.className = "board-rank"; rk.textContent = (rank < 0) ? "\u2013" : (rank + 1) + ".";
           var nm = document.createElement("span");
           var urec = users[r.uid];
           nm.textContent = cleanName((urec && urec.name) || "???", r.uid);
@@ -12362,7 +12555,24 @@ function loadBoard(listEl, tabsBox) {
           list.appendChild(row);
         })(rows[i], (boardMyRow && rows[i] === boardMyRow) ? boardMyRank : i);
       }
-    });
+      });
+    };
+    // outside the top 20: fetch just the user's own entry so their row still
+    // shows (exact rank needs a full count, so it displays as –)
+    if (!boardMyRow && boardMe) {
+      var myBoardRef = isAll ? db.ref("xp/" + boardMe)
+        : (boardTab === "day" ? db.ref("xpDaily/" + xpDayKey(now) + "/" + boardMe)
+        : (boardTab === "week" ? db.ref("xpWeekly/" + xpWeekKey(now) + "/" + boardMe)
+        : db.ref("xpMonthly/" + xpMonthKey(now) + "/" + boardMe)));
+      myBoardRef.once("value", function (msnap) {
+        var mv = msnap.val();
+        var mAmt = isAll ? ((mv && typeof mv.xp === "number") ? mv.xp : 0) : (typeof mv === "number" ? mv : 0);
+        if (mAmt > 0) { boardMyRow = { uid: boardMe, xp: mAmt }; boardMyRank = -1; }
+        finishBoard();
+      }, function () { finishBoard(); });
+    } else {
+      finishBoard();
+    }
   });
 }
 function enterStore() {
@@ -19333,6 +19543,33 @@ function alcRenderRecipes() {
     try { lsSet("readium_notify_rules", JSON.stringify(rules)); } catch (e) {}
   }
   var notifyWatchers = {};
+  var notifyRoomListRef = null;
+  // check one new last-message against every notify rule (2026-11-27 usage
+  // fix: the old whole-"rooms" value listener re-downloaded every room and
+  // every message on each message site-wide; now each public room gets its
+  // own limitToLast(1) listener, so only the newest message per room is read)
+  function notifyCheckMessage(rid, lastKey, m) {
+    var rules = getNotifyRules();
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      if (rule.type !== "chat") { continue; }
+      var mName = (m.name || "").toLowerCase();
+      var match = (rule.user === "*") ? true : (mName === rule.user.toLowerCase());
+      if (match && m.uid !== myUid()) {
+        // avoid duplicate notifications
+        var nk = "notify_" + rule.user + "_" + lastKey;
+        try {
+          if (localStorage.getItem(nk)) { continue; }
+          localStorage.setItem(nk, "1");
+        } catch (e) {}
+        var title = (rule.user === "*") ? (m.name || "someone") + " is talking!" : rule.user + " is talking!";
+        notify(title, "in " + rid + ": " + String(m.text || "").substring(0, 50),
+          (function (roomId) {
+            return function () { openChat("rooms/" + roomId + "/messages", "room: " + roomId, "msgs"); };
+          })(rid));
+      }
+    }
+  }
   function startNotifyWatchers() {
     var rules = getNotifyRules();
     // clear old watchers
@@ -19340,41 +19577,29 @@ function alcRenderRecipes() {
       try { notifyWatchers[k].off(); } catch (e) {}
     }
     notifyWatchers = {};
-    for (var i = 0; i < rules.length; i++) {
-      (function (rule) {
-        if (rule.type === "chat") {
-          // watch all public rooms for this user speaking (or "*" for anyone)
-          var ref = db.ref("rooms");
-          var handler = function (snap) {
-            var rooms = snap.val() || {};
-            for (var rid in rooms) {
-              (function (rid) {
-                var msgs = rooms[rid].messages || {};
-                var keys = Object.keys(msgs);
-                if (!keys.length) return;
-                var lastKey = keys[keys.length - 1];
-                var m = msgs[lastKey] || {};
-                var mName = (m.name || "").toLowerCase();
-                var match = (rule.user === "*") ? true : (mName === rule.user.toLowerCase());
-                if (match && m.uid !== myUid()) {
-                  // avoid duplicate notifications
-                  var nk = "notify_" + rule.user + "_" + lastKey;
-                  try {
-                    if (localStorage.getItem(nk)) return;
-                    localStorage.setItem(nk, "1");
-                  } catch (e) {}
-                  var title = (rule.user === "*") ? (m.name || "someone") + " is talking!" : rule.user + " is talking!";
-                  notify(title, "in " + (rooms[rid].name || "chat") + ": " + String(m.text || "").substring(0, 50),
-                    function () { openChat("rooms/" + rid + "/messages", "room: " + ((rooms[rid] && rooms[rid].name) || rid), "msgs"); });
-                }
-              })(rid);
-            }
-          };
-          ref.on("value", handler);
-          notifyWatchers["chat_" + rule.user] = ref;
+    if (notifyRoomListRef) { try { notifyRoomListRef.off(); } catch (e) {} notifyRoomListRef = null; }
+    if (!rules.length) { return; }
+    // light index of public rooms only (ids + names, no messages); rebuild the
+    // per-room last-message watchers whenever rooms are created or removed
+    notifyRoomListRef = db.ref("roomList");
+    notifyRoomListRef.on("value", function (snap) {
+      var data = snap.val() || {};
+      var rids = Object.keys(data);
+      for (var k in notifyWatchers) {
+        if (rids.indexOf(k.substring(5)) === -1) {
+          try { notifyWatchers[k].off(); } catch (e) {}
+          delete notifyWatchers[k];
         }
-      })(rules[i]);
-    }
+      }
+      for (var i = 0; i < rids.length; i++) {
+        (function (rid) {
+          if (notifyWatchers["nmsg_" + rid]) { return; }
+          var q = db.ref("rooms/" + rid + "/messages").orderByChild("ts").limitToLast(1);
+          q.on("child_added", function (s) { notifyCheckMessage(rid, s.key, s.val() || {}); });
+          notifyWatchers["nmsg_" + rid] = q;
+        })(rids[i]);
+      }
+    });
   }
   function chatbotReply(text) {
     var t = text.toLowerCase().trim();
@@ -19720,7 +19945,7 @@ function alcRenderRecipes() {
       mergeSuggestData();
     });
     // second query: every not-done item, so older OPEN items never vanish
-    suggestOpenRef = db.ref("suggestions").orderByChild("done").endAt(false);
+    suggestOpenRef = db.ref("suggestions").orderByChild("done").endAt(false).limitToLast(100);
     suggestOpenRef.on("value", function (snap) {
       suggestOpenData = snap.val() || {};
       mergeSuggestData();
@@ -21048,7 +21273,9 @@ function alcRenderRecipes() {
         }
       });
     } else {
-      db.ref("feastPumpkins").once("value", function (snap) {
+      // server-side top 20 (2026-11-27 usage fix: the whole balances node
+      // was downloaded to show 20 rows)
+      db.ref("feastPumpkins").orderByValue().limitToLast(20).once("value", function (snap) {
         var v = snap.val() || {};
         var rows = [];
         for (var uid in v) {
@@ -21362,7 +21589,8 @@ function alcRenderRecipes() {
           if (restored) { applyAllSettings(); }
         });
       } catch (e) {}
-      // heartbeat: restart notification watchers every 60s to keep them alive everywhere
+      // heartbeat: refresh DM + block watchers every 60s (notify watchers are
+      // persistent listeners now and do not need restarting)
       if (window._notifHeartbeat) { clearInterval(window._notifHeartbeat); }
       window._notifHeartbeat = setInterval(function () {
         try {
@@ -21370,7 +21598,6 @@ function alcRenderRecipes() {
             watchDmRequests();
             watchDmMessages();
             watchBlockNotifs();
-            startNotifyWatchers();
           }
         } catch (e) {}
       }, 60000);
