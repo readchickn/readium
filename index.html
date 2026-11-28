@@ -634,7 +634,7 @@
 </style>
 <style id="pastel-theme">
 /* Pastel look (UI v8) - toggleable in Settings, default on */
-body, body.dark, body.colorsoft { font-family: "Trebuchet MS", Verdana, sans-serif !important; background: #fff8fb !important; color: #5a4a5a !important; font-size: 17px !important; line-height: 1.5 !important; max-width: 640px !important; padding: 16px 12px !important; }
+body { font-family: "Trebuchet MS", Verdana, sans-serif !important; background: #fff8fb !important; color: #5a4a5a !important; font-size: 17px !important; line-height: 1.5 !important; max-width: 640px !important; padding: 16px 12px !important; }
 h1 { font-size: 28px !important; color: #5a4a5a !important; }
 h2 { font-size: 22px !important; color: #5a4a5a !important; }
 p { margin-bottom: 14px !important; }
@@ -709,6 +709,144 @@ button { box-shadow: 0 2px 6px rgba(180,120,150,0.25) !important; }
 .feast-btn, .event-btn { background-image: none !important; background: #fbcfe8 !important; color: #6b2d4d !important; text-shadow: none !important; }
 
 
+/* Pastel Dark (UI v8) - same pastel accents on dark muted plum/mauve */
+body.dark { background: #2b212b !important; color: #f0e4ec !important; }
+body.dark h1 { color: #f0e4ec !important; }
+body.dark h2 { color: #f0e4ec !important; }
+body.dark label { color: #f0e4ec !important; }
+body.dark a { color: #f7a8cf !important; }
+body.dark .msg.own a, body.dark #profile-card a, body.dark #signin-card a, body.dark #confirm-card a, body.dark #help-box a, body.dark #online-panel a { color: #f7a8cf !important; }
+body.dark input[type="text"], body.dark input[type="password"], body.dark input[type="date"], body.dark textarea, body.dark select { background: #241d24 !important; color: #f0e4ec !important; border: 2px solid #6b4a5e !important; border-radius: 16px !important; font-size: 15px !important; font-family: "Trebuchet MS", Verdana, sans-serif !important; }
+body.dark button { background: #7a4a68 !important; color: #ffeef6 !important; border: 2px solid #6b4a5e !important; border-radius: 16px !important; font-size: 17px !important; padding: 10px 16px !important; font-family: "Trebuchet MS", Verdana, sans-serif !important; }
+body.dark button.secondary { background: #3a2e3a !important; color: #f0e4ec !important; border: 2px solid #6b4a5e !important; }
+body.dark #clock, body.dark #chip-name { color: #f0e4ec !important; }
+body.dark .logo { color: #f0e4ec !important; font-size: 72px !important; }
+body.dark .logo-bar { background: #f0e4ec !important; }
+body.dark .subtext { color: #c9a8bf !important; }
+body.dark .tile, body.dark #apps-screen button { background: #332631 !important; color: #f0e4ec !important; border: 2px solid #6b4a5e !important; border-radius: 16px !important; font-size: 19px !important; min-height: 96px !important; }
+body.dark .dot { background: #f0e4ec !important; }
+body.dark button .dot { background: #ffeef6 !important; }
+body.dark button.secondary .dot { background: #f0e4ec !important; }
+body.dark #messages { border: 2px solid #6b4a5e !important; border-radius: 16px !important; background: #332631 !important; }
+body.dark .msg { color: #f0e4ec !important; }
+body.dark .msg.own { background: #463a5e !important; color: #e6e2f5 !important; border-radius: 16px !important; }
+body.dark .msg .name { color: #f0e4ec !important; }
+body.dark .msg.own .name { color: #e6e2f5 !important; }
+body.dark .msg .time { color: #c9a8bf !important; }
+body.dark .msg.own .time { color: #b9b3d6 !important; }
+body.dark .msg.own .reply-quote { color: #b9b3d6 !important; border-left-color: #b9b3d6 !important; }
+body.dark .pfp { border: 2px solid #6b4a5e !important; }
+body.dark .reply-quote { color: #c9a8bf !important; border-left-color: #6b4a5e !important; }
+body.dark #msg-input { border: 2px solid #6b4a5e !important; border-radius: 16px !important; background: #241d24 !important; color: #f0e4ec !important; font-size: 15px !important; }
+body.dark #muse-input { background: #241d24 !important; color: #f0e4ec !important; border: 2px solid #6b4a5e !important; border-radius: 16px !important; }
+body.dark #chat-sidebar { border: 2px solid #6b4a5e !important; border-radius: 16px !important; background: #332631 !important; }
+body.dark #chat-sidebar button { background: #3a2e3a !important; color: #f0e4ec !important; border: 2px solid #6b4a5e !important; }
+body.dark #chat-sidebar button.cur { background: #463a5e !important; color: #e6e2f5 !important; }
+body.dark #chat-sidebar .side-head { color: #c9a8bf !important; }
+body.dark #dm-menu { background: #332631 !important; border: 2px solid #6b4a5e !important; border-radius: 16px !important; }
+body.dark .req-row, body.dark .section-body, body.dark #life-log, body.dark .life-ev { border: 2px solid #6b4a5e !important; border-radius: 16px !important; background: #3a2e3a !important; color: #f0e4ec !important; }
+body.dark .board-row { border-bottom: 1px solid #6b4a5e !important; }
+body.dark .board-row.me { background: #463a5e !important; color: #e6e2f5 !important; }
+body.dark #profile-card, body.dark #signin-card, body.dark #confirm-card, body.dark #help-box, body.dark #board-popup-card { background: #3a2e3a !important; color: #f0e4ec !important; border: 3px solid #6b4a5e !important; border-radius: 16px !important; }
+body.dark #profile-card h1, body.dark #profile-card h2, body.dark #signin-card h1, body.dark #signin-card h2, body.dark #confirm-card h1, body.dark #confirm-card h2, body.dark #help-box h1, body.dark #help-box h2, body.dark #board-popup-card h2 { color: #f0e4ec !important; }
+body.dark #profile-card a, body.dark #signin-card a { color: #f7a8cf !important; }
+body.dark #side-nav { background: #332631 !important; border-top: 2px solid #6b4a5e !important; }
+body.dark #side-nav button { background: #332631 !important; color: #f0e4ec !important; }
+body.dark #online-panel { background: #332631 !important; border-left: 2px solid #6b4a5e !important; color: #f0e4ec !important; }
+body.dark #online-panel .on-name { color: #f0e4ec !important; }
+body.dark #online-panel .on-dot { background: #f9a8d4 !important; }
+body.dark .stat .bar { border: 2px solid #6b4a5e !important; }
+body.dark .stat .fill { background: #f9a8d4 !important; }
+body.dark .notif { background: #5c3a50 !important; color: #ffeef6 !important; border: 2px solid #6b4a5e !important; border-radius: 16px !important; }
+body.dark #error, body.dark #room-error, body.dark #join-error, body.dark #dm-error { color: #ff9a8a !important; }
+body.dark #dm-ok, body.dark #profile-ok, body.dark #pw-ok { color: #8fd6a8 !important; }
+body.dark .pin-row { border-left: 4px solid #6b4a5e !important; }
+body.dark .pin-label { color: #c9a8bf !important; }
+body.dark #reply-bar { color: #c9a8bf !important; border-left: 3px solid #6b4a5e !important; }
+body.dark #mute-notice { color: #ff9a8a !important; }
+body.dark #chess-board { border: 3px solid #6b4a5e !important; }
+body.dark button { box-shadow: 0 2px 6px rgba(0,0,0,0.45) !important; }
+body.dark #feast-wheel { border-color: #6b4a5e !important; }
+body.dark #feast-screen { background: #2b212b !important; }
+body.dark #feast-screen h1, body.dark #feast-screen h2, body.dark #feast-countdown, body.dark #feast-team-line, body.dark #feast-pumpkin-line, body.dark #feast-stations-note, body.dark #feast-result, body.dark #feast-join-text, body.dark #feast-grat-note, body.dark #feast-wheel-streak, body.dark #feast-wheel-msg, body.dark #feast-gift-msg, body.dark #feast-panel-games p { color: #f0e4ec !important; text-shadow: none !important; }
+body.dark #feast-screen .team-row, body.dark #feast-screen .board-row { color: #f0e4ec !important; border-bottom-color: #6b4a5e !important; }
+body.dark #feast-screen .team-row.me, body.dark #feast-screen .board-row.me { background: #463a5e !important; color: #e6e2f5 !important; }
+body.dark #feast-wheel-box, body.dark #feast-gift-box { background: #3a2e3a !important; border-color: #6b4a5e !important; }
+body.dark .feast-card { background: #3a2e3a !important; color: #f0e4ec !important; border-color: #6b4a5e !important; }
+body.dark #event-screen { background: #2b212b !important; background-image: none !important; }
+body.dark #event-screen h1, body.dark #event-countdown, body.dark #event-team-line, body.dark #event-candy-line, body.dark #event-doors-note, body.dark #event-result, body.dark #event-join-text { color: #f0e4ec !important; text-shadow: none !important; }
+body.dark #event-screen .team-row, body.dark #event-screen .board-row { color: #f0e4ec !important; }
+body.dark #event-screen .team-row.me, body.dark #event-screen .board-row.me { background: #463a5e !important; }
+body.dark .feast-btn, body.dark .event-btn { background-image: none !important; background: #7a4a68 !important; color: #ffeef6 !important; text-shadow: none !important; }
+/* Pastel Colorsoft (UI v8) - warm cream #fdf8ec with soft pink pastel accents */
+body.colorsoft { background: #fdf8ec !important; color: #5a4a5a !important; }
+body.colorsoft h1 { color: #5a4a5a !important; }
+body.colorsoft h2 { color: #5a4a5a !important; }
+body.colorsoft label { color: #5a4a5a !important; }
+body.colorsoft a { color: #c26a9a !important; }
+body.colorsoft .msg.own a, body.colorsoft #profile-card a, body.colorsoft #signin-card a, body.colorsoft #confirm-card a, body.colorsoft #help-box a, body.colorsoft #online-panel a { color: #c26a9a !important; }
+body.colorsoft input[type="text"], body.colorsoft input[type="password"], body.colorsoft input[type="date"], body.colorsoft textarea, body.colorsoft select { background: #fffdf4 !important; color: #5a4a5a !important; border: 2px solid #e8cfae !important; border-radius: 16px !important; font-size: 15px !important; font-family: "Trebuchet MS", Verdana, sans-serif !important; }
+body.colorsoft button { background: #fbcfe8 !important; color: #6b2d4d !important; border: 2px solid #e8cfae !important; border-radius: 16px !important; font-size: 17px !important; padding: 10px 16px !important; font-family: "Trebuchet MS", Verdana, sans-serif !important; }
+body.colorsoft button.secondary { background: #fffdf4 !important; color: #5a4a5a !important; border: 2px solid #e8cfae !important; }
+body.colorsoft #clock, body.colorsoft #chip-name { color: #5a4a5a !important; }
+body.colorsoft .logo { color: #5a4a5a !important; font-size: 72px !important; }
+body.colorsoft .logo-bar { background: #5a4a5a !important; }
+body.colorsoft .subtext { color: #a08ba0 !important; }
+body.colorsoft .tile, body.colorsoft #apps-screen button { background: #f7f1e2 !important; color: #5a4a5a !important; border: 2px solid #e8cfae !important; border-radius: 16px !important; font-size: 19px !important; min-height: 96px !important; }
+body.colorsoft .dot { background: #5a4a5a !important; }
+body.colorsoft button .dot { background: #6b2d4d !important; }
+body.colorsoft button.secondary .dot { background: #5a4a5a !important; }
+body.colorsoft #messages { border: 2px solid #e8cfae !important; border-radius: 16px !important; background: #fffdf4 !important; }
+body.colorsoft .msg { color: #5a4a5a !important; }
+body.colorsoft .msg.own { background: #fdeeda !important; color: #5a4a5a !important; border-radius: 16px !important; }
+body.colorsoft .msg .name { color: #5a4a5a !important; }
+body.colorsoft .msg.own .name { color: #5a4a5a !important; }
+body.colorsoft .msg .time { color: #a08ba0 !important; }
+body.colorsoft .msg.own .time { color: #a08ba0 !important; }
+body.colorsoft .msg.own .reply-quote { color: #a08ba0 !important; border-left-color: #a08ba0 !important; }
+body.colorsoft .pfp { border: 2px solid #e8cfae !important; }
+body.colorsoft .reply-quote { color: #a08ba0 !important; border-left-color: #e8cfae !important; }
+body.colorsoft #msg-input { border: 2px solid #e8cfae !important; border-radius: 16px !important; background: #fffdf4 !important; color: #5a4a5a !important; font-size: 15px !important; }
+body.colorsoft #muse-input { background: #fffdf4 !important; color: #5a4a5a !important; border: 2px solid #e8cfae !important; border-radius: 16px !important; }
+body.colorsoft #chat-sidebar { border: 2px solid #e8cfae !important; border-radius: 16px !important; background: #fffdf4 !important; }
+body.colorsoft #chat-sidebar button { background: #fffdf4 !important; color: #5a4a5a !important; border: 2px solid #e8cfae !important; }
+body.colorsoft #chat-sidebar button.cur { background: #fdeeda !important; color: #5a4a5a !important; }
+body.colorsoft #chat-sidebar .side-head { color: #a08ba0 !important; }
+body.colorsoft #dm-menu { background: #fffdf4 !important; border: 2px solid #e8cfae !important; border-radius: 16px !important; }
+body.colorsoft .req-row, body.colorsoft .section-body, body.colorsoft #life-log, body.colorsoft .life-ev { border: 2px solid #e8cfae !important; border-radius: 16px !important; background: #fffdf4 !important; color: #5a4a5a !important; }
+body.colorsoft .board-row { border-bottom: 1px solid #e8cfae !important; }
+body.colorsoft .board-row.me { background: #fdeeda !important; color: #5a4a5a !important; }
+body.colorsoft #profile-card, body.colorsoft #signin-card, body.colorsoft #confirm-card, body.colorsoft #help-box, body.colorsoft #board-popup-card { background: #fffdf4 !important; color: #5a4a5a !important; border: 3px solid #e8cfae !important; border-radius: 16px !important; }
+body.colorsoft #profile-card h1, body.colorsoft #profile-card h2, body.colorsoft #signin-card h1, body.colorsoft #signin-card h2, body.colorsoft #confirm-card h1, body.colorsoft #confirm-card h2, body.colorsoft #help-box h1, body.colorsoft #help-box h2, body.colorsoft #board-popup-card h2 { color: #5a4a5a !important; }
+body.colorsoft #profile-card a, body.colorsoft #signin-card a { color: #c26a9a !important; }
+body.colorsoft #side-nav { background: #fffdf4 !important; border-top: 2px solid #e8cfae !important; }
+body.colorsoft #side-nav button { background: #fffdf4 !important; color: #5a4a5a !important; }
+body.colorsoft #online-panel { background: #fffdf4 !important; border-left: 2px solid #e8cfae !important; color: #5a4a5a !important; }
+body.colorsoft #online-panel .on-name { color: #5a4a5a !important; }
+body.colorsoft #online-panel .on-dot { background: #f9a8d4 !important; }
+body.colorsoft .stat .bar { border: 2px solid #e8cfae !important; }
+body.colorsoft .stat .fill { background: #f9a8d4 !important; }
+body.colorsoft .notif { background: #fbcfe8 !important; color: #6b2d4d !important; border: 2px solid #e8cfae !important; border-radius: 16px !important; }
+body.colorsoft #error, body.colorsoft #room-error, body.colorsoft #join-error, body.colorsoft #dm-error { color: #c0392b !important; }
+body.colorsoft #dm-ok, body.colorsoft #profile-ok, body.colorsoft #pw-ok { color: #5a9e6f !important; }
+body.colorsoft .pin-row { border-left: 4px solid #e8cfae !important; }
+body.colorsoft .pin-label { color: #a08ba0 !important; }
+body.colorsoft #reply-bar { color: #a08ba0 !important; border-left: 3px solid #e8cfae !important; }
+body.colorsoft #mute-notice { color: #c0392b !important; }
+body.colorsoft #chess-board { border: 3px solid #e8cfae !important; }
+body.colorsoft button { box-shadow: 0 2px 6px rgba(180,140,90,0.25) !important; }
+body.colorsoft #feast-wheel { border-color: #e8cfae !important; }
+body.colorsoft #feast-screen { background: #fdf8ec !important; }
+body.colorsoft #feast-screen h1, body.colorsoft #feast-screen h2, body.colorsoft #feast-countdown, body.colorsoft #feast-team-line, body.colorsoft #feast-pumpkin-line, body.colorsoft #feast-stations-note, body.colorsoft #feast-result, body.colorsoft #feast-join-text, body.colorsoft #feast-grat-note, body.colorsoft #feast-wheel-streak, body.colorsoft #feast-wheel-msg, body.colorsoft #feast-gift-msg, body.colorsoft #feast-panel-games p { color: #5a4a5a !important; text-shadow: none !important; }
+body.colorsoft #feast-screen .team-row, body.colorsoft #feast-screen .board-row { color: #5a4a5a !important; border-bottom-color: #e8cfae !important; }
+body.colorsoft #feast-screen .team-row.me, body.colorsoft #feast-screen .board-row.me { background: #fdeeda !important; color: #5a4a5a !important; }
+body.colorsoft #feast-wheel-box, body.colorsoft #feast-gift-box { background: #fffdf4 !important; border-color: #e8cfae !important; }
+body.colorsoft .feast-card { background: #fffdf4 !important; color: #5a4a5a !important; border-color: #e8cfae !important; }
+body.colorsoft #event-screen { background: #fdf8ec !important; background-image: none !important; }
+body.colorsoft #event-screen h1, body.colorsoft #event-countdown, body.colorsoft #event-team-line, body.colorsoft #event-candy-line, body.colorsoft #event-doors-note, body.colorsoft #event-result, body.colorsoft #event-join-text { color: #5a4a5a !important; text-shadow: none !important; }
+body.colorsoft #event-screen .team-row, body.colorsoft #event-screen .board-row { color: #5a4a5a !important; }
+body.colorsoft #event-screen .team-row.me, body.colorsoft #event-screen .board-row.me { background: #fdeeda !important; }
+body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !important; background: #fbcfe8 !important; color: #6b2d4d !important; text-shadow: none !important; }
 </style>
 </head>
 <body>
