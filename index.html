@@ -1341,6 +1341,8 @@ body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !i
     <button class="mini secondary ban-dur sel" data-min="10">10 min</button><button class="mini secondary ban-dur" data-min="60">1 hour</button><button class="mini secondary ban-dur" data-min="1440">1 day</button><button class="mini secondary ban-dur" data-min="10080">1 week</button><button class="mini secondary ban-dur" data-min="0">forever</button>
   </div>
   <button id="ban-add-btn" class="secondary">ban user</button>
+  <input id="dash-bans-search" type="text" maxlength="20" placeholder="search banned users...">
+  <p id="dash-bans-count" style="font-size:15px"></p>
   <button id="dash-bans-toggle" class="secondary section-head">banned list +</button>
   <div id="dash-bans-wrap" class="hidden section-body"><div id="dash-bans"><p>loading...</p></div></div>
   </div>
@@ -2338,6 +2340,8 @@ body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !i
     <button id="pp-tip-btn" class="secondary">tip xp</button>
     <button id="pp-pet-btn" class="secondary hidden">my pet</button>
     <button id="pp-block-btn" class="secondary">block</button>
+    <button id="pp-ban-btn" class="secondary hidden">ban</button>
+    <div id="pp-ban-dur-row" class="hidden" style="margin:6px 0;"><button class="mini secondary ban-dur sel" data-min="10">10 min</button><button class="mini secondary ban-dur" data-min="60">1 hour</button><button class="mini secondary ban-dur" data-min="1440">1 day</button><button class="mini secondary ban-dur" data-min="10080">1 week</button><button class="mini secondary ban-dur" data-min="0">forever</button></div>
     <button id="pp-close-btn" class="secondary">close</button>
   </div>
 </div>
@@ -2425,6 +2429,7 @@ body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !i
   var pinsRef = null;
   var dashReportsRef = null;
   var dashBansRef = null;
+  var dashBansData = null; // last bans snapshot, for the banned-list search filter
   var hoodFeedRef = null;
   var hoodCommentsRefs = {};
   var hoodSort = "new"; // (2026-11-25, suggestion #58) neighborhood sort: "new" = newest first, "old" = oldest first
@@ -5329,14 +5334,42 @@ body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !i
     });
   }
   function renderBans(data) {
-    var box = document.getElementById("dash-bans");
-    box.innerHTML = "";
-    var keys = data ? Object.keys(data) : [];
-    if (!keys.length) { box.innerHTML = "<p>nobody banned</p>"; return; }
+    dashBansData = data || {};
+    // prune expired temp bans once per data arrival (used to happen while rendering)
+    var keys = Object.keys(dashBansData);
     for (var i = 0; i < keys.length; i++) {
+      var b0 = dashBansData[keys[i]] || {};
+      if (b0.until && b0.until <= Date.now()) { db.ref("bans/" + keys[i]).remove(); }
+    }
+    renderBansRows();
+  }
+  /* banned-list search (2026-11-27): filters the rendered list as you type,
+     by username (case-insensitive substring) or uid; count updates with it */
+  function renderBansRows() {
+    if (dashBansData === null) { return; } // bans not loaded yet, keep "loading..."
+    var box = document.getElementById("dash-bans");
+    var countEl = document.getElementById("dash-bans-count");
+    box.innerHTML = "";
+    var data = dashBansData;
+    var keys = Object.keys(data);
+    var live = [];
+    for (var i = 0; i < keys.length; i++) {
+      var b0 = data[keys[i]] || {};
+      if (!(b0.until && b0.until <= Date.now())) { live.push(keys[i]); }
+    }
+    var qEl = document.getElementById("dash-bans-search");
+    var q = qEl ? qEl.value.replace(/^\s+|\s+$/g, "").toLowerCase() : "";
+    var shown = [];
+    for (var j = 0; j < live.length; j++) {
+      var uid = live[j];
+      var brec = data[uid] || {};
+      if (!q || String(brec.name || "").toLowerCase().indexOf(q) >= 0 || uid.toLowerCase().indexOf(q) >= 0) { shown.push(uid); }
+    }
+    if (countEl) { countEl.textContent = shown.length + " of " + live.length + " banned"; }
+    if (!live.length) { box.innerHTML = "<p>nobody banned</p>"; return; }
+    if (!shown.length) { box.innerHTML = "<p>no banned users match that</p>"; return; }
+    for (var k = 0; k < shown.length; k++) {
       (function (uid) {
-        var brec0 = data[uid] || {};
-        if (brec0.until && brec0.until <= Date.now()) { db.ref("bans/" + uid).remove(); return; }
         var row = document.createElement("div");
         row.className = "req-row";
         var p = document.createElement("p");
@@ -5356,7 +5389,7 @@ body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !i
         un.onclick = function () { db.ref("bans/" + uid).remove(); };
         row.appendChild(un);
         box.appendChild(row);
-      })(keys[i]);
+      })(shown[k]);
     }
   }
   (function () {
@@ -5517,6 +5550,7 @@ body.colorsoft .feast-btn, body.colorsoft .event-btn { background-image: none !i
   document.getElementById("dash-review-tab-flagged").onclick = function () { reviewTab = "flagged"; renderReviewTab(); };
   document.getElementById("dash-review-tab-appeals").onclick = function () { reviewTab = "appeals"; renderReviewTab(); };
   document.getElementById("review-sort").onchange = function () { reviewSort = this.value; buildReviewQueue(); renderReviewTab(); };
+  document.getElementById("dash-bans-search").oninput = function () { renderBansRows(); };
   document.getElementById("dash-bans-toggle").onclick = function () {
     var w = document.getElementById("dash-bans-wrap");
     var t = document.getElementById("dash-bans-toggle");
@@ -8248,6 +8282,47 @@ function lhWbInit() {
     var me = myUid();
     var ppb = document.getElementById("pp-pet-btn");
     if (ppb) { ppb.className = (uid === me) ? "mini secondary" : "mini secondary hidden"; }
+    // ban from profile (2026-11-27): mods/helpers only, never yourself or a founder.
+    // reuses the dashboard's banUser (same durations via the shared banMinutes,
+    // same confirm text, same bans/<uid> write) — no new ban path.
+    var banb = document.getElementById("pp-ban-btn");
+    if (banb) {
+      if (uid === me || !canModerate() || isFounderUid(uid)) {
+        banb.className = "mini secondary hidden";
+      } else {
+        banb.className = "mini secondary";
+        banb.textContent = "ban";
+        // reset the duration picker each time the profile opens: hidden, synced to banMinutes
+        var prow = document.getElementById("pp-ban-dur-row");
+        if (prow) {
+          prow.className = "hidden";
+          var pbtns = prow.getElementsByClassName("ban-dur");
+          for (var pi = 0; pi < pbtns.length; pi++) {
+            var pmins = parseInt(pbtns[pi].getAttribute("data-min"), 10);
+            pbtns[pi].className = "mini secondary ban-dur" + (pmins === banMinutes ? " sel" : "");
+            // helpers only see 10 min and 1 hour (same rule as the dashboard)
+            if (!isMod && !isFounder && pmins !== 10 && pmins !== 60) { pbtns[pi].style.display = "none"; }
+            else { pbtns[pi].style.display = ""; }
+          }
+        }
+        banb.onclick = function () {
+          var bname = rec.name || "user";
+          var drow = document.getElementById("pp-ban-dur-row");
+          if (drow && drow.className === "hidden") {
+            // first tap: show the duration picker so the mod picks before confirming
+            drow.className = "";
+            banb.textContent = "confirm ban";
+            return;
+          }
+          askConfirm("Ban " + bname + "? all of their messages will be deleted too.", function () {
+            banUser(uid, bname);
+            document.getElementById("profile-popup").className = "hidden";
+            ppUid = null;
+            flashNotice(bname + " was banned.");
+          });
+        };
+      }
+    }
     var fb = document.getElementById("pp-follow-btn");
     var dmb = document.getElementById("pp-dm-btn");
     var rdb = document.getElementById("pp-reqdm-btn");
